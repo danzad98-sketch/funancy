@@ -1,0 +1,4247 @@
+@import "tailwindcss";
+/* mk-board v14 — new producer art (assets/producers/spawner-*.png) + spawn flash, recompile trigger */
+
+@theme inline {
+  /* ---------------------------------------------------------------
+   * DESIGN SYSTEM TOKENS (mirrors src/lib/designSystem.ts)
+   * Every new component must reference ds-* variables, not raw hex.
+   * Legacy game-specific colors below are kept for existing CSS that
+   * would otherwise need a bulk rewrite — but new code should prefer
+   * the ds-* palette below.
+   * --------------------------------------------------------------- */
+
+  /* primary (warm gold/orange) */
+  --color-ds-primary-50:  #fff6e3;
+  --color-ds-primary-200: #ffd98a;
+  --color-ds-primary-400: #ffb23a;
+  --color-ds-primary-600: #d98708;
+  --color-ds-primary-800: #8a5500;
+
+  /* secondary (deep purple) */
+  --color-ds-secondary-50:  #f3e7fb;
+  --color-ds-secondary-200: #d6a6f0;
+  --color-ds-secondary-400: #a855d6;
+  --color-ds-secondary-600: #7b1fa2;
+  --color-ds-secondary-800: #3d0a5a;
+
+  /* success (green) */
+  --color-ds-success-50:  #e8f6ea;
+  --color-ds-success-200: #a5d6a7;
+  --color-ds-success-400: #66bb6a;
+  --color-ds-success-600: #2e7d32;
+  --color-ds-success-800: #14431a;
+
+  /* danger (warm red) */
+  --color-ds-danger-50:  #ffe6e3;
+  --color-ds-danger-200: #ffa499;
+  --color-ds-danger-400: #e63838;
+  --color-ds-danger-600: #a8201c;
+  --color-ds-danger-800: #5a0d0a;
+
+  /* neutrals (warm cream → deep brown, NOT gray) */
+  --color-ds-neutral-50:  #fff8ee;
+  --color-ds-neutral-200: #f5e6c8;
+  --color-ds-neutral-400: #d4a96a;
+  --color-ds-neutral-600: #7a4a1e;
+  --color-ds-neutral-800: #2a1508;
+
+  /* Spacing, radius, shadow — exposed for utility classes below */
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 16px;
+  --ds-radius-lg: 24px;
+  --ds-radius-full: 9999px;
+
+  --ds-shadow-subtle: 0 2px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.35);
+  --ds-shadow-medium: 0 4px 0 rgba(0,0,0,0.22), 0 6px 14px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.35);
+  --ds-shadow-heavy:  0 6px 0 rgba(0,0,0,0.28), 0 10px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+  --ds-glow-primary:  0 0 16px rgba(255,178,58,0.55), 0 0 32px rgba(255,178,58,0.25);
+  --ds-glow-success:  0 0 16px rgba(102,187,106,0.55), 0 0 32px rgba(102,187,106,0.25);
+
+  /* Rich casual game palette - legacy names, kept for existing components */
+  --color-wood-light: #f5e6c8;
+  --color-wood: #c4883c;
+  --color-wood-dark: #7a4a1e;
+  --color-awning-red: #e03030;
+  --color-awning-white: #fff5ee;
+
+  /* Cards & surfaces */
+  --color-card-cream: #fff8ee;
+  --color-card-border: #d4a96a;
+  --color-card-inner: #f7ead4;
+
+  /* Gold & coins */
+  --color-coin-gold: #ffc107;
+  --color-coin-dark: #c79100;
+  --color-coin-shine: #ffe57f;
+
+  /* Greens */
+  --color-highlight-green: #43a047;
+  --color-highlight-green-light: #c8e6c9;
+  --color-sell-green: #4caf50;
+  --color-sell-green-dark: #2e7d32;
+  --color-sell-glow: #66ffaa;
+
+  /* Reds */
+  --color-loss-red: #d32f2f;
+  --color-loss-red-light: #ffcdd2;
+
+  /* Purple / energy */
+  --color-energy-purple: #7b1fa2;
+  --color-energy-light: #ce93d8;
+  --color-producer-purple: #6a1b9a;
+  --color-producer-border: #ab47bc;
+  --color-producer-glow: #e040fb;
+
+  /* Amber / speeder */
+  --color-speeder-amber: #ff8f00;
+  --color-speeder-glow: #ffcc02;
+
+  /* Backgrounds */
+  --color-bg-warm: #5d3a1a;
+  --color-bg-board: #4a2e14;
+  --color-bg-finance: #1a3a5c;
+  --color-bg-goals: #2e1a4a;
+
+  /* Navigation */
+  --color-nav-bg: #2a1508;
+  --color-nav-active: #ffc107;
+
+  /* Text game style */
+  --color-text-light: #fff8ee;
+  --color-text-shadow: #3a1a00;
+
+  --font-heebo: 'Heebo', Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-heebo);
+}
+
+body {
+  background: var(--color-bg-warm);
+  color: var(--color-text-light);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ===== GAME TEXT STYLES ===== */
+.game-title {
+  font-weight: 900;
+  text-shadow: 0 2px 0 var(--color-text-shadow), 0 3px 6px rgba(0,0,0,0.4);
+  letter-spacing: 0.02em;
+}
+
+.game-text-outline {
+  text-shadow:
+    -1px -1px 0 var(--color-text-shadow),
+    1px -1px 0 var(--color-text-shadow),
+    -1px 1px 0 var(--color-text-shadow),
+    1px 1px 0 var(--color-text-shadow),
+    0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* ===== AWNING ===== */
+.awning-stripes {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-awning-red) 0px,
+    var(--color-awning-red) 22px,
+    var(--color-awning-white) 22px,
+    var(--color-awning-white) 44px
+  );
+  border-radius: 0 0 20px 20px;
+  box-shadow:
+    0 6px 12px rgba(0,0,0,0.3),
+    inset 0 -3px 6px rgba(0,0,0,0.15);
+  border-bottom: 3px solid #a02020;
+}
+
+/* ===== BEVELED BUTTON BASE ===== */
+.btn-game {
+  font-weight: 800;
+  border-radius: 14px;
+  border: none;
+  position: relative;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow:
+    0 4px 0 0 rgba(0,0,0,0.25),
+    0 6px 12px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: all 0.1s ease;
+}
+.btn-game:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 0 rgba(0,0,0,0.25),
+    0 3px 6px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.btn-green {
+  background: linear-gradient(180deg, #66bb6a 0%, #43a047 50%, #2e7d32 100%);
+  color: white;
+}
+
+.btn-gold {
+  background: linear-gradient(180deg, #ffd54f 0%, #ffb300 50%, #ff8f00 100%);
+  color: #5d3a1a;
+}
+
+.btn-purple {
+  background: linear-gradient(180deg, #ab47bc 0%, #7b1fa2 50%, #4a0072 100%);
+  color: white;
+}
+
+.btn-red {
+  background: linear-gradient(180deg, #ef5350 0%, #d32f2f 50%, #b71c1c 100%);
+  color: white;
+}
+
+/* ===== GAME PANEL ===== */
+.game-panel {
+  background: linear-gradient(180deg, var(--color-card-cream) 0%, var(--color-card-inner) 100%);
+  border: 3px solid var(--color-card-border);
+  border-radius: 18px;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.game-panel-dark {
+  background: linear-gradient(180deg, #3a2010 0%, #2a1508 100%);
+  border: 3px solid #6a4020;
+  border-radius: 18px;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* ===== RESOURCE PILL ===== */
+.resource-pill {
+  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 100%);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* ===== GRID CELL ===== */
+.grid-cell {
+  background: linear-gradient(180deg, #e8d5b0 0%, #d4b88a 100%);
+  border: 2px solid #b89060;
+  border-radius: 10px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.grid-cell-empty {
+  background: linear-gradient(180deg, #c4a06a30 0%, #b8904020 100%);
+  border: 2px dashed #b8906050;
+  border-radius: 10px;
+}
+
+.grid-cell-highlight {
+  background: linear-gradient(180deg, #a5d6a7 0%, #81c784 100%);
+  border: 2px solid #43a047;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(76,175,80,0.5), inset 0 1px 2px rgba(255,255,255,0.3);
+}
+
+.grid-cell-hover {
+  background: linear-gradient(180deg, #c8e6c9 0%, #a5d6a7 100%);
+  border: 2px solid #66bb6a;
+  border-radius: 10px;
+  box-shadow: 0 0 14px rgba(76,175,80,0.7);
+  transform: scale(1.05);
+}
+
+/* ===== ITEM ON GRID ===== */
+.item-bubble {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0e8d8 100%);
+  border: 2px solid #c4a06a;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+/* ===== TROPHY ITEM (Tier 8) ===== */
+.item-trophy {
+  background: linear-gradient(135deg, #fff9c4 0%, #ffd54f 40%, #ff8f00 100%);
+  border: 2px solid #ff6f00;
+  box-shadow:
+    0 0 12px rgba(255,193,7,0.6),
+    0 0 24px rgba(255,152,0,0.3),
+    0 2px 6px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  animation: trophyGlow 2s ease-in-out infinite;
+}
+
+@keyframes trophyGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 12px rgba(255,193,7,0.6),
+      0 0 24px rgba(255,152,0,0.3),
+      0 2px 6px rgba(0,0,0,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(255,193,7,0.9),
+      0 0 40px rgba(255,152,0,0.5),
+      0 2px 6px rgba(0,0,0,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes coinFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+  100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+}
+.coin-float {
+  animation: coinFloat 1s ease-out forwards;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-5px) rotate(-2deg); }
+  40% { transform: translateX(5px) rotate(2deg); }
+  60% { transform: translateX(-3px) rotate(-1deg); }
+  80% { transform: translateX(3px) rotate(1deg); }
+}
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(76, 175, 80, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.9), 0 0 40px rgba(76,175,80,0.3); }
+}
+.glow-green {
+  animation: glow 1.2s ease-in-out infinite;
+}
+
+@keyframes glowGold {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,193,7,0.3); }
+  50% { box-shadow: 0 0 16px rgba(255,193,7,0.8), 0 0 30px rgba(255,193,7,0.3); }
+}
+.glow-gold {
+  animation: glowGold 1.5s ease-in-out infinite;
+}
+
+@keyframes spawn {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  50% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+  70% { transform: scale(0.9) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.item-spawn {
+  animation: spawn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.item-spawn-once {
+  animation: spawn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes mergeFlash {
+  0% { transform: scale(1); filter: brightness(1); }
+  30% { transform: scale(1.4); filter: brightness(1.5); }
+  60% { transform: scale(0.8); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.merge-flash {
+  animation: mergeFlash 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.1); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.bounce-in {
+  animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Sell reward float animation */
+@keyframes sellRewardFloat {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); }
+  40% { transform: translate(-50%, -20px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50px) scale(0.8); }
+}
+.sell-reward-float {
+  animation: sellRewardFloat 1.2s ease-out forwards;
+}
+
+/* Inflation animations */
+@keyframes inflationCoinFly1 {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(15px, -30px) scale(0.3) rotate(180deg); }
+}
+@keyframes inflationCoinFly2 {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-10px, -25px) scale(0.2) rotate(-120deg); }
+}
+@keyframes inflationCoinFly3 {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(5px, -35px) scale(0.2) rotate(240deg); }
+}
+@keyframes inflationShake {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-8deg); }
+  30% { transform: rotate(8deg); }
+  45% { transform: rotate(-5deg); }
+  60% { transform: rotate(5deg); }
+  75% { transform: rotate(-2deg); }
+}
+/* Inflation flying-coin instances — three sized PNGs that share the
+   keyframes above. Each inherits .mk-icon background-image plumbing
+   via the .mk-icon-coin class on the element; we just give them
+   distinct sizes and the staggered animation. */
+.inflation-coin-1 {
+  width: 22px; height: 22px;
+  animation: inflationCoinFly1 1.5s ease-out forwards;
+  animation-delay: 0.1s;
+}
+.inflation-coin-2 {
+  width: 16px; height: 16px;
+  animation: inflationCoinFly2 1.5s ease-out forwards;
+  animation-delay: 0.4s;
+}
+.inflation-coin-3 {
+  width: 12px; height: 12px;
+  animation: inflationCoinFly3 1.5s ease-out forwards;
+  animation-delay: 0.7s;
+}
+.inflation-icon {
+  animation: inflationShake 0.8s ease-in-out;
+}
+
+/* Page transition */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: pageIn 0.15s ease-out;
+}
+
+/* Progress bar */
+.progress-fill {
+  transition: width 0.5s ease-out;
+}
+
+.progress-bar-game {
+  background: linear-gradient(180deg, #333 0%, #222 100%);
+  border: 2px solid #555;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.progress-fill-gold {
+  background: linear-gradient(180deg, var(--color-coin-shine) 0%, var(--color-coin-gold) 40%, var(--color-coin-dark) 100%);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: width 0.5s ease-out;
+}
+
+/* Scrollbar hide */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Background patterns */
+.bg-board-pattern {
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,200,100,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255,150,50,0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #5d3a1a 0%, #4a2e14 40%, #3a2010 100%);
+}
+
+/* ===== MOCKUP REDESIGN — Warm blurred cityscape/market background ===== */
+.bg-market-scene {
+  position: relative;
+  background:
+    radial-gradient(ellipse 320px 240px at 18% 18%, rgba(255,180,110,0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 260px 220px at 82% 22%, rgba(255,140,160,0.45) 0%, transparent 70%),
+    radial-gradient(ellipse 300px 260px at 10% 80%, rgba(120,200,210,0.40) 0%, transparent 70%),
+    radial-gradient(ellipse 340px 280px at 90% 78%, rgba(255,200,140,0.45) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 50%, rgba(255,220,180,0.25) 0%, transparent 70%),
+    linear-gradient(180deg, #fdd6a8 0%, #f5a987 35%, #e78d8d 65%, #c47798 100%);
+}
+.bg-market-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(120,60,30,0.08) 60%, rgba(80,40,20,0.18) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* NOTE: The legacy .header-pill / .header-pill-dark classes were retired
+   when the mockup-faithful .mk-header was introduced below. They have
+   been removed because no TSX currently references them. If you need
+   the old style back, restore from git history. */
+
+/* =================================================================
+   MOCKUP HEADER v2 — pixel-faithful (mk- prefix)
+   See mockup attached in chat: cream header strip with overlapping
+   3D icons that hang off the left edge of cream pills.
+   ================================================================= */
+
+/* Sized for 375px viewport. Margins are generous enough that the
+   purple level-badge halo (which sits BEYOND the avatar bounds) has
+   room to render without clipping the screen edges, AND the painted
+   icons that overhang each pill don't fall off either side. */
+.mk-header {
+  background: linear-gradient(180deg, #ede5d4 0%, #e3dac6 100%);
+  border-bottom: 1px solid rgba(120, 80, 40, 0.10);
+  padding: 12px 14px 14px;
+}
+
+/* --- Avatar (rounded square frame + level badge that overlaps bottom-right) --- */
+.mk-avatar-frame {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 2px solid #d4b88a;
+  box-shadow:
+    0 3px 0 0 rgba(140, 90, 40, 0.20),
+    0 5px 12px rgba(0, 0, 0, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mk-level-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fdf2dc 0%, #f3e3bf 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 12px;
+  color: #2c1608;
+  /* Triple-layer purple glow ring as per mockup. */
+  box-shadow:
+    0 0 0 2.5px #b07ad8,
+    0 0 10px 2px rgba(176, 122, 216, 0.55),
+    0 2px 4px rgba(0, 0, 0, 0.20);
+  z-index: 2;
+}
+
+/* --- Header pills (cream rounded with overlapping icon on the LEFT) ---
+   Sized so 3 pills + avatar fit a 375px screen without clipping.       */
+.mk-pill {
+  position: relative;
+  background: linear-gradient(180deg, #fdf2dc 0%, #f3e3bf 100%);
+  border-radius: 999px;
+  /* Number column is right of the painted icon. The icon (50px) lives
+     in a 38px column on the left edge; padding-left = 36px leaves a 2px
+     visual gap between icon-right and number. */
+  padding: 6px 14px 6px 36px;
+  font-weight: 900;
+  font-size: 16px;
+  color: #2c1608;
+  letter-spacing: -0.01em;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  box-shadow:
+    0 3px 0 0 rgba(140, 90, 40, 0.30),
+    0 4px 10px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The painted PNG.
+   - 44×44 (~1.3× pill height of 34px) — large enough to dominate the
+     pill like the mockup, small enough to not collide with the number.
+   - left:-14px → ~32% of the icon hangs off the left edge of the pill,
+     keeping the silhouette breaking out of the pill (mockup intent),
+     while the inner half stays *behind* the cream pill so the painted
+     edge reads as anchored, not floating.
+   - Numbers right-align, padding-left clears the inside half of the
+     icon so digits never overlap the painted artwork. */
+.mk-pill-icon {
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Soft grounded shadow keeps the icon visually attached to the pill. */
+  filter: drop-shadow(0 2px 2px rgba(80, 40, 10, 0.28))
+          drop-shadow(0 0 1px rgba(80, 40, 10, 0.15));
+  pointer-events: none;
+  /* Painted PNG supplied via --icon-url inline style on the element. */
+  background-image: var(--icon-url, none);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Energy pill stacks a small timer-sub-pill underneath. The sub-pill
+   is absolutely positioned below the main pill so it does NOT push the
+   stack taller than a normal pill — keeping the energy pill vertically
+   centered with the coin and hourglass pills in the header flex row. */
+.mk-pill-stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.mk-pill-sub {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 3px;
+  background: linear-gradient(180deg, #fdf2dc 0%, #ebd9b3 100%);
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-weight: 800;
+  font-size: 10px;
+  color: #2c1608;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 0 0 rgba(140, 90, 40, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ===== Reusable inline icons (coin / bolt / hourglass) =====
+   Single source of truth for the three painted PNGs that originally
+   shipped only in the header. Mirrors `.mk-pill-icon` but is a sized,
+   inline-flow span you can drop into any text or button.
+
+   Usage:  <span class="mk-icon mk-icon-coin mk-icon--sm" aria-hidden />
+
+   Sizes follow the inventory plan (xs..xl). Drop-shadow matches the
+   header so the painted artwork looks anchored, not floating, on
+   cream / dark / coloured surfaces alike. */
+.mk-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-image: var(--icon-url, none);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 1px rgba(80, 40, 10, 0.28))
+          drop-shadow(0 0 1px rgba(80, 40, 10, 0.15));
+  vertical-align: -0.18em; /* baseline-align inside running text */
+}
+.mk-icon-coin      { --icon-url: url('/assets/icons/coin.png'); }
+.mk-icon-bolt      { --icon-url: url('/assets/icons/bolt.png'); }
+.mk-icon-hourglass { --icon-url: url('/assets/icons/hourglass.png'); }
+
+.mk-icon--xs { width: 14px; height: 14px; }
+.mk-icon--sm { width: 18px; height: 18px; }
+.mk-icon--md { width: 24px; height: 24px; }
+.mk-icon--lg { width: 36px; height: 36px; }
+.mk-icon--xl { width: 48px; height: 48px; }
+
+/* Big icon variant used inside the Time-Speeder CTA — gets a stronger
+   amber glow so it reads as the button's primary visual, matching the
+   header pill weight. */
+.mk-icon--cta {
+  filter: drop-shadow(0 2px 3px rgba(80, 40, 10, 0.35))
+          drop-shadow(0 0 4px rgba(255, 200, 110, 0.55));
+}
+
+.mk-sparkle {
+  font-size: 13px;
+  opacity: 0.75;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* Restart Demo button — fixed-position floating circle so it never
+   competes with the resource pills inside the header for space. Sits
+   in the upper-left corner (in RTL: visually left = `right: auto;
+   left: 8px`). Always visible, always above the header chrome. */
+.mk-restart-btn {
+  position: fixed;
+  /* Moved to BOTTOM-left to clear the iOS status bar / dynamic island
+     entirely. Bottom nav is ~88px tall, so we sit above it with a gap. */
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  left: 8px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffd98a 0%, #d98708 100%);
+  border: 2px solid #8a5500;
+  color: #2a1508;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #6b4200, 0 3px 8px rgba(0,0,0,0.4);
+  transition: transform 100ms ease;
+}
+.mk-restart-btn:hover  { transform: scale(1.10); }
+.mk-restart-btn:active { transform: scale(0.92); }
+
+/* =================================================================
+   PAINTED WORKING BOARD — three section backdrops + page bg
+   Each PNG is a single hand-painted asset; we use it as a sized
+   background-image and layer the interactive UI on top. The page
+   wrapper has a warm market gradient that blends seamlessly with
+   each section's painted backdrop where they meet.
+   ================================================================= */
+
+/* Page-level warm market backdrop — a soft gradient sampled from the
+   bokeh tones in the painted assets. Each section PNG sits on top of
+   this, and the painted artwork in each PNG bleeds into the gradient
+   so the seams between sections read as continuous environment. */
+.mk-board-bg {
+  background: radial-gradient(
+      ellipse at 50% 18%,
+      rgba(255, 220, 170, 0.50) 0%,
+      rgba(220, 160, 120, 0.20) 50%,
+      transparent 80%
+    ),
+    linear-gradient(
+      180deg,
+      #ecbb88 0%,
+      #d99964 28%,
+      #c8855a 60%,
+      #a86a48 100%
+    );
+}
+
+/* --- Section A: SELL STALL ------------------------------------- */
+/* Painted stall (awning, lanterns, register, 2 trays, blurred market)
+   used as the backdrop. The chefs / reward bubbles / SELL button
+   layer on top. The stall art preserves an aspect ratio close to the
+   painted asset (650x1280 -> ~0.508), but here we crop the lower
+   half via background-position so the awning + counter sit in the
+   visible area while the long blurred backdrop scrolls off below. */
+.mk-stall {
+  position: relative;
+  width: 100%;
+  /* Display the WHOLE painted stall asset (awning, lanterns, register,
+     counter, trays, blurred market) as a single integrated scene at
+     its native painted-band aspect ratio. NO crop, NO non-uniform
+     stretch — the container shape matches the painting. */
+  /* New official background asset (Board_2 mockup, PRD follow-up). */
+  aspect-ratio: 650 / 720;
+  background-image: url('/assets/Board_2/stall-background.jpeg');
+  /* Asset is 650x1280 (taller than the visible band). 100% auto keeps
+     proportions; positioning at top crops the lower wood-floor area
+     while keeping the upper 720px band (awning + register + counter
+     + market) fully visible without any vertical stretch. */
+  background-size: 100% auto;
+  background-position: center top;
+  background-repeat: no-repeat;
+  /* Reward bubbles + type tags rise just above the awning per mockup. */
+  overflow: visible;
+  /* Soft shadow under the stall to anchor it against the page bg. */
+  filter: drop-shadow(0 6px 14px rgba(60, 30, 10, 0.35));
+}
+
+/* Inner stage where the chefs + bubbles + SELL button render. The
+   painted trays sit roughly in the lower-third of the asset; this
+   container is positioned absolutely so the chefs visually stand on
+   the wooden counter. */
+/* ============================================================
+ * Sell stall slots (PRD follow-up — reference 3 layout):
+ *   character standing behind the counter, dark-brown sell card
+ *   sitting in front of them. Up to 3 slots across.
+ * ============================================================ */
+.mk-stall-stage {
+  position: absolute;
+  /* Slots occupy the counter + counter-front band of the painted stall. */
+  inset: 18% 4% 4% 4%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-evenly;
+  gap: 6px;
+  pointer-events: none;
+}
+.mk-stall-stage > * { pointer-events: auto; }
+
+/* Per-slot vertical column: buyer on top, sell card below. */
+.mk-slot {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+/* Buyer character — sits in front of the awning + behind the counter
+   edge, so the card overlaps the bottom of the character (looks like
+   they're holding it on the counter). */
+.mk-slot-buyer {
+  display: flex;
+  justify-content: center;
+  filter: drop-shadow(0 3px 4px rgba(40, 20, 10, 0.40));
+  margin-bottom: -10px;   /* card overlaps buyer's torso */
+  z-index: 1;
+}
+
+/* --- Sell card (Reference 4) ---------------------------------
+ * Dark brown rounded rectangle. Two stacked rows:
+ *   row 1 — yellow reward number + gold coin
+ *   row 2 — white item square + green SELL pill
+ * Sits on the wooden counter directly in front of its buyer. */
+.mk-sellcard {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 6px 8px 7px;
+  border-radius: 14px;
+  /* Dark warm brown sampled from the mockup */
+  background: linear-gradient(180deg, #4a2e1a 0%, #2c1808 100%);
+  border: 1.5px solid #1a0e04;
+  box-shadow:
+    0 3px 0 0 rgba(0, 0, 0, 0.40),
+    0 6px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 220, 160, 0.18);
+  z-index: 2;
+  transition: transform 120ms ease;
+}
+.mk-sellcard.is-pending {
+  filter: saturate(0.60) brightness(0.85);
+}
+
+/* Reward header — inline-start aligned (visually right in RTL).
+   Big bold yellow number + the painted coin PNG. */
+.mk-sellcard-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-inline-start: 4px;
+}
+.mk-sellcard-reward-num {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffd840;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.5),
+    0 2px 2px rgba(0, 0, 0, 0.30);
+}
+
+/* Body row — flex; the SELL pill uses a negative margin to overlap
+   into the item square at the corner where they meet, matching the
+   mockup's "stacked" composition. The pill stays inside the card. */
+.mk-sellcard-body {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.mk-sellcard-items {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  z-index: 2;
+  position: relative;
+}
+.mk-sellcard-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5efde 100%);
+  /* Soft mint-green glow around the white box (mockup) + inner
+     highlight + subtle drop. */
+  box-shadow:
+    0 0 0 2.5px rgba(110, 217, 117, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 3px rgba(0, 0, 0, 0.25);
+  font-size: 24px;
+  line-height: 1;
+}
+
+/* SELL — overlaps the item square's bottom-right by sliding inline-end
+   with a negative margin (-14px) and dropping ~6px below center. The
+   higher z-index ensures the pill paints OVER the white square at the
+   overlap region (mockup look). */
+.mk-sellcard-sell {
+  flex-shrink: 0;
+  margin-inline-start: -14px;
+  margin-top: 10px;
+  z-index: 3;
+  position: relative;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.04em;
+  background: linear-gradient(180deg, #7adf83 0%, #2e9637 100%);
+  box-shadow:
+    0 3px 0 0 #1f6e26,
+    0 4px 8px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+  cursor: pointer;
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.mk-sellcard-sell:hover  { filter: brightness(1.08); }
+.mk-sellcard-sell:active { transform: scale(0.94); }
+.mk-sellcard-sell:disabled {
+  background: linear-gradient(180deg, #888 0%, #555 100%);
+  box-shadow: 0 2px 0 0 #333, inset 0 1px 0 rgba(255,255,255,0.20);
+  cursor: not-allowed;
+  opacity: 0.80;
+}
+
+/* ============================================================
+ * Finance Center — premium investment platform cards (PRD 2)
+ * Two variants: .fin-card (expanded) and .fin-pill (collapsed)
+ * Navy gradient shell, gold inner border, glass info row.
+ * ============================================================ */
+.fin-card {
+  position: relative;
+  background: linear-gradient(180deg, #1d3358 0%, #0f1f33 100%);
+  border-radius: 18px;
+  padding: 14px 14px 16px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 200, 80, 0.25),
+    0 4px 0 0 rgba(20, 10, 4, 0.30),
+    0 10px 24px rgba(0, 0, 0, 0.40);
+  overflow: hidden;
+  animation: finCardOpen 220ms cubic-bezier(0.18, 1.3, 0.45, 1);
+}
+.fin-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 0%, rgba(255,200,80,0.10) 0%, transparent 50%);
+  pointer-events: none;
+}
+@keyframes finCardOpen {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.fin-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.fin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fin-platform-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #ffd98a 0%, #d98708 100%);
+  border: 1.5px solid #8a5500;
+  font-size: 18px;
+  box-shadow: inset 0 1px 0 #6b4200, 0 2px 4px rgba(0,0,0,0.2);
+}
+.fin-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff8ed;
+  letter-spacing: -0.01em;
+}
+.fin-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(180deg, #5ed26a 0%, #2e9637 100%);
+  box-shadow: 0 1px 0 #1f6e26;
+  white-space: nowrap;
+}
+.fin-change.neg {
+  background: linear-gradient(180deg, #ef4d4d 0%, #b81f1f 100%);
+  box-shadow: 0 1px 0 #831313;
+}
+
+.fin-balance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff4dc 0%, #f1dfb1 100%);
+  border: 1.5px solid rgba(120, 70, 20, 0.30);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 2px 0 rgba(140, 90, 40, 0.30);
+}
+.fin-balance-coin {
+  width: 28px;
+  height: 28px;
+  background-image: url('/assets/icons/coin.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 1px rgba(80,40,10,0.30));
+}
+.fin-balance-num {
+  font-size: 28px;
+  font-weight: 900;
+  color: #2c1608;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.fin-info-cell {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 200, 80, 0.18);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fin-info-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d4b88a;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+.fin-info-value {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff8ed;
+  font-variant-numeric: tabular-nums;
+}
+.fin-info-value.pos { color: #6ed975; }
+.fin-info-value.neg { color: #f37070; }
+
+.fin-actions {
+  display: flex;
+  gap: 8px;
+}
+.fin-btn {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.fin-btn.buy {
+  background: linear-gradient(180deg, #5ed26a 0%, #2e9637 100%);
+  box-shadow: 0 3px 0 #1f6e26, 0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.fin-btn.sell {
+  background: linear-gradient(180deg, #ef4d4d 0%, #b81f1f 100%);
+  box-shadow: 0 3px 0 #831313, 0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.30);
+}
+.fin-btn:hover  { filter: brightness(1.08); }
+.fin-btn:active { transform: scale(0.96); }
+.fin-btn:disabled {
+  filter: saturate(0.4) brightness(0.7);
+  cursor: not-allowed;
+}
+
+/* When a locked account is expanded, only the SELL action is disabled
+ * (via the button's `disabled` attribute). Deposits remain allowed — the
+ * lock is on early WITHDRAWAL, not on adding money in. The old blanket
+ * `pointer-events: none` on the whole action row prevented the buy
+ * button from being tappable on קופת גמל during the Stage-5 lock window. */
+.fin-card.locked .fin-btn.sell { opacity: 0.42; cursor: not-allowed; }
+.fin-lock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 200, 80, 0.18);
+  border: 1px solid rgba(255, 200, 80, 0.32);
+  color: #ffd98a;
+  white-space: nowrap;
+}
+
+/* Collapsed pill — fits in a vertical list, tap to expand. */
+.fin-pill {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1d3358 0%, #0f1f33 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 200, 80, 0.20),
+    0 2px 0 0 rgba(20, 10, 4, 0.25),
+    0 4px 10px rgba(0,0,0,0.25);
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.fin-pill:hover  { filter: brightness(1.08); }
+.fin-pill:active { transform: scale(0.98); }
+.fin-pill-left  { display: flex; align-items: center; gap: 8px; }
+.fin-pill-name  { font-size: 14px; font-weight: 900; color: #fff8ed; }
+.fin-pill-balance { display: flex; align-items: center; gap: 6px; }
+.fin-pill-coin {
+  width: 18px;
+  height: 18px;
+  background-image: url('/assets/icons/coin.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.fin-pill-num {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff8ed;
+  font-variant-numeric: tabular-nums;
+}
+.fin-pill-caret { color: rgba(255, 200, 80, 0.55); font-size: 12px; }
+
+/* Override the previously-defined .mk-info-btn to nest cleanly inside
+   the navy header (slight size bump for legibility on dark background). */
+.fin-header .mk-info-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+}
+
+/* ============================================================
+ * Coin fly-to-header (PRD onboarding step 1.5)
+ * Renders a gold coin glyph that animates from the sell-card reward
+ * chip toward the header coin pill. `--coin-dx` / `--coin-dy` are
+ * set inline by the React component.
+ * ============================================================ */
+.coin-fly {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-image: url('/assets/icons/coin.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+  z-index: 1050;
+  pointer-events: none;
+  animation-name: coinFlyArc;
+  animation-timing-function: cubic-bezier(0.5, -0.1, 0.6, 1);
+  animation-fill-mode: forwards;
+  opacity: 0;
+}
+@keyframes coinFlyArc {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1.0) rotate(0deg); }
+  30%  { opacity: 1; transform: translate(calc(var(--coin-dx) * 0.30), calc(var(--coin-dy) * 0.30 - 40px)) scale(1.15) rotate(120deg); }
+  70%  { opacity: 1; transform: translate(calc(var(--coin-dx) * 0.70), calc(var(--coin-dy) * 0.70 - 20px)) scale(1.05) rotate(280deg); }
+  100% { opacity: 0; transform: translate(var(--coin-dx), var(--coin-dy)) scale(0.55) rotate(440deg); }
+}
+
+/* ============================================================
+ * Drag-gesture demo (PRD onboarding step 1.3)
+ * A finger glyph that loops from one grid cell to an adjacent one,
+ * miming a drag-to-merge.
+ * ============================================================ */
+.drag-demo-finger {
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+  animation: dragDemoLoop 1.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+@keyframes dragDemoLoop {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  10%  { transform: translate(0, 0) scale(1.15); }
+  15%  { transform: translate(0, 0) scale(1); }
+  60%  { transform: translate(var(--drag-dx), var(--drag-dy)) scale(1); opacity: 1; }
+  70%  { transform: translate(var(--drag-dx), var(--drag-dy)) scale(0.92); opacity: 0.7; }
+  80%  { transform: translate(var(--drag-dx), var(--drag-dy)) scale(0); opacity: 0; }
+  85%  { transform: translate(0, 0) scale(0); opacity: 0; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+/* ============================================================
+ * Time speeder spinning-clock overlay (PRD page 3, "תוספות נוספות")
+ * Plays for ~2.5s while the speeder action commits in parallel.
+ * ============================================================ */
+.tspeed-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 10, 4, 0.78);
+  backdrop-filter: blur(2px);
+  pointer-events: auto; /* swallow taps while animating */
+  animation: tspeedFade 200ms ease-out;
+}
+@keyframes tspeedFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.tspeed-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.tspeed-face {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8e8 0%, #f0deb0 60%, #c9a566 100%);
+  border: 5px solid #5a3a1a;
+  box-shadow:
+    0 0 0 3px rgba(255, 220, 120, 0.45),
+    0 12px 36px rgba(0, 0, 0, 0.55),
+    inset 0 4px 0 rgba(255, 255, 255, 0.45);
+}
+/* Hour marks */
+.tspeed-tick {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 2px;
+  height: 9px;
+  background: #5a3a1a;
+  transform-origin: 50% 64px;
+  border-radius: 1px;
+}
+/* Clock hands — pivot from the centre */
+.tspeed-hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  background: #2c1608;
+  border-radius: 2px;
+  transform-origin: 50% 100%;
+}
+.tspeed-hand--hour {
+  width: 5px;
+  height: 38px;
+  margin-left: -2.5px;
+  animation: tspeedHourSpin 1.25s linear infinite;
+}
+.tspeed-hand--minute {
+  width: 3px;
+  height: 56px;
+  margin-left: -1.5px;
+  background: #d98708;
+  animation: tspeedMinuteSpin 0.3s linear infinite;
+}
+.tspeed-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: #2c1608;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px #ffd87b;
+}
+@keyframes tspeedMinuteSpin { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+@keyframes tspeedHourSpin   { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+.tspeed-caption {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff8ed;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+ * Inflation educational visuals — Stage 2
+ *   .inflation-screen        — card-on-dim modal (matches StageOpener)
+ *   .inflation-milk-*        — three milk cartons with rising prices
+ *   .basket-grid-*           — three baskets with shrinking groceries
+ *   Style direction: warm cream card on dimmed backdrop, no navy.
+ * ============================================================ */
+.inflation-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(15, 9, 5, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 18px;
+  animation: stageOpenerFade 220ms ease-out;
+}
+.inflation-screen-inner {
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(180deg, #fff8ee 0%, #f5e6c8 100%);
+  border: 2px solid #d4a96a;
+  border-radius: 24px;
+  padding: 22px 22px 20px;
+  box-shadow:
+    0 6px 0 0 #b89060,
+    0 18px 38px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  animation: stageOpenerRise 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.inflation-screen-caption {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #4a2900;
+  letter-spacing: -0.01em;
+  padding: 0 6px;
+}
+
+/* Milk cartons */
+.inflation-milk-row,
+.inflation-basket-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 10px;
+  width: 100%;
+}
+.inflation-milk-col,
+.inflation-basket-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  opacity: 0;
+  animation: inflFadeIn 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes inflFadeIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.inflation-year {
+  font-size: 13px;
+  font-weight: 900;
+  color: #8a5500;
+  letter-spacing: 0.04em;
+}
+.inflation-carton {
+  position: relative;
+  width: 80px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(0 4px 6px rgba(74, 41, 0, 0.18));
+}
+.inflation-carton-top {
+  position: relative;
+  width: 0;
+  height: 0;
+  margin-inline: auto;
+  border-style: solid;
+  border-width: 0 26px 14px 26px;
+  border-color: transparent transparent #ffb23a transparent;
+}
+.inflation-carton-body {
+  position: relative;
+  flex: 1;
+  background: linear-gradient(180deg, #fffaf0 0%, #ffe9b8 100%);
+  border: 1.5px solid #d4a96a;
+  border-radius: 3px 3px 6px 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+/* Decorative gold band across each carton — gives it product-label feel. */
+.inflation-carton-body::after {
+  content: '';
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 38%;
+  height: 14px;
+  background: linear-gradient(180deg, #ffd840 0%, #d98708 100%);
+  border-top: 1px solid #b89060;
+  border-bottom: 1px solid #b89060;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.inflation-price {
+  font-size: 19px;
+  font-weight: 900;
+  color: #2a1508;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.inflation-price-rise {
+  animation: inflPriceRise 700ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  color: #c4341c;
+}
+@keyframes inflPriceRise {
+  0%   { transform: translateY(10px) scale(0.92); opacity: 0; color: #c4341c; }
+  55%  { transform: translateY(-3px) scale(1.14); opacity: 1; color: #c4341c; }
+  100% { transform: translateY(0)    scale(1);    opacity: 1; color: #d98708; }
+}
+/* Per-card delta callout below price ("+₪0.87 ↑"). */
+.inflation-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #c4341c;
+  background: rgba(196, 52, 28, 0.1);
+  border: 1px solid rgba(196, 52, 28, 0.3);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  animation: inflFadeIn 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Baskets */
+.inflation-basket {
+  position: relative;
+  width: 88px;
+  height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+}
+.inflation-basket-icon {
+  font-size: 46px;
+  line-height: 1;
+  margin-bottom: -8px;
+}
+.inflation-basket-contents {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  max-width: 80px;
+  min-height: 20px;
+}
+.inflation-basket-item {
+  font-size: 14px;
+  line-height: 1;
+  animation: inflItemPop 400ms ease-out forwards;
+  opacity: 0;
+}
+.inflation-basket-item:nth-child(1) { animation-delay: 200ms; }
+.inflation-basket-item:nth-child(2) { animation-delay: 300ms; }
+.inflation-basket-item:nth-child(3) { animation-delay: 400ms; }
+.inflation-basket-item:nth-child(4) { animation-delay: 500ms; }
+.inflation-basket-item:nth-child(5) { animation-delay: 600ms; }
+@keyframes inflItemPop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+ * MissionCompleteToast (PRD page 3) — cross-cutting passive
+ * celebration shown when a Finance Center mission completes
+ * while the user is on a different screen. Auto-dismisses after 3s.
+ * ============================================================ */
+.mission-toast {
+  position: fixed;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1080;
+  width: calc(100vw - 32px);
+  max-width: 320px;
+  pointer-events: none;
+  animation: missionToastIn 280ms cubic-bezier(0.18, 1.3, 0.45, 1);
+}
+@keyframes missionToastIn {
+  from { opacity: 0; transform: translate(-50%, -16px) scale(0.92); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+.mission-toast-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 12px 14px 10px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff8ed 0%, #f1dfb1 100%);
+  border: 2px solid rgba(120, 70, 20, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.40);
+  pointer-events: auto;
+}
+.mission-toast-icon {
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(120, 60, 0, 0.4));
+  animation: missionToastIcon 2.4s ease-in-out infinite;
+}
+@keyframes missionToastIcon {
+  0%, 100% { transform: scale(1) rotate(-4deg); }
+  50%      { transform: scale(1.08) rotate(4deg); }
+}
+.mission-toast-text { display: flex; flex-direction: column; gap: 2px; }
+.mission-toast-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: #2c1608;
+  letter-spacing: -0.01em;
+}
+.mission-toast-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4a2810cc;
+  line-height: 1.3;
+}
+.mission-toast-bar {
+  grid-column: 1 / span 2;
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(120, 70, 20, 0.20);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.mission-toast-bar-fill {
+  position: absolute;
+  inset: 0 100% 0 0;
+  background: linear-gradient(90deg, #5ed26a 0%, #2e9637 100%);
+  border-radius: 3px;
+  animation: missionToastFill 1100ms ease-out forwards;
+}
+@keyframes missionToastFill {
+  from { right: 100%; }
+  to   { right: 0; }
+}
+
+.mission-toast-confetti {
+  position: absolute;
+  top: -16px;
+  width: 6px;
+  height: 12px;
+  border-radius: 1px;
+  animation: missionToastConfetti 2.6s ease-in forwards;
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes missionToastConfetti {
+  0%   { transform: translateY(0) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+}
+
+/* Meta Goal price pulse — fires every time `metaInflationFactor` ticks. */
+.mk-meta-price-pulse {
+  animation: mkMetaPricePulse 700ms ease-out;
+}
+@keyframes mkMetaPricePulse {
+  0%   { transform: scale(1);    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 0 rgba(140,90,40,0.30); }
+  35%  { transform: scale(1.18); box-shadow: 0 0 0 6px rgba(255, 60, 60, 0.35), inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 0 rgba(140,90,40,0.30); }
+  100% { transform: scale(1);    box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 2px 0 rgba(140,90,40,0.30); }
+}
+
+/* ============================================================
+ * Tutorial / Onboarding overlay primitives (PRD "user flow part 1")
+ * ============================================================ */
+
+/* Full-screen dim (used when there's no spotlight target). */
+.tut-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 2, 0.62);
+  z-index: 1000;
+  pointer-events: auto;
+}
+.tut-dim[data-blocking='false'] { pointer-events: none; }
+
+/* 4-piece blocker around the spotlight cutout. */
+.tut-blocker {
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Animated outline ring around the spotlight cutout. */
+.tut-spot-ring {
+  animation: tutSpotPulse 1.6s ease-in-out infinite;
+}
+@keyframes tutSpotPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.95; }
+}
+
+/* Popup card */
+.tut-popup {
+  position: fixed;
+  z-index: 1003;
+  max-width: 320px;
+  width: calc(100vw - 40px);
+  padding: 18px 18px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff8ed 0%, #f1dfb1 100%);
+  border: 2px solid rgba(120, 70, 20, 0.45);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  animation: tutPopupIn 220ms cubic-bezier(0.18, 1.3, 0.45, 1);
+}
+@keyframes tutPopupIn {
+  from { opacity: 0; transform: translate(var(--tx, -50%), calc(var(--ty, -50%) + 8px)) scale(0.92); }
+  to   { opacity: 1; }
+}
+.tut-popup-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2c1608;
+  line-height: 1.45;
+  text-align: center;
+}
+.tut-popup-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a2810aa;
+  text-align: center;
+  margin-top: 6px;
+}
+.tut-popup-btn {
+  display: block;
+  margin: 12px auto 0;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #ffb23a 0%, #d98708 100%);
+  box-shadow: 0 3px 0 #8a5500, 0 4px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.tut-popup-btn:hover  { filter: brightness(1.08); }
+.tut-popup-btn:active { transform: scale(0.96); }
+
+/* Locked state during the min-display-time window (1.5 s by default).
+ * Disabled visually + cursor; tap is a no-op via `disabled` on the element. */
+.tut-popup-btn--locked {
+  opacity: 0.55;
+  cursor: wait;
+  filter: grayscale(0.3);
+}
+.tut-popup-btn--locked:hover { filter: grayscale(0.3); }
+.tut-popup-btn--locked:active { transform: none; }
+
+/* Bouncing arrow indicator */
+.tut-arrow {
+  font-size: 36px;
+  line-height: 1;
+  animation: tutArrowBounce 1.0s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+@keyframes tutArrowBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(8px); }
+}
+
+/* Polished SVG arrow — used during onboarding (Stage 1) to guide taps.
+ * Gold-gradient downward chevron with a subtle glow; gentle 2px bob loop. */
+.tut-arrow--polished {
+  font-size: 0; /* hide any text inside; only SVG renders */
+  width: 36px;
+  height: 44px;
+  filter: drop-shadow(0 6px 10px rgba(217, 135, 8, 0.45));
+  animation: tutArrowPolishedBob 1.2s ease-in-out infinite;
+}
+@keyframes tutArrowPolishedBob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(3px); }
+}
+
+/* When the tutorial is active we add this class to <body>; everything
+   below the dim layer that isn't the active target should NOT receive
+   pointer events. We rely on the spotlight blocker for granular control;
+   this class is just an escape hatch for the rare case where a child of
+   a non-target element needs to be force-disabled. */
+body.tutorial-active .ds-btn[data-tut-disabled='true'],
+body.tutorial-active button[data-tut-disabled='true'] {
+  filter: saturate(0.4) brightness(0.85);
+  pointer-events: none !important;
+}
+
+/* ============================================================
+ * Meta Goal page (PRD 3) — aspirational journey background
+ * Pure CSS — no PNG required. Warm dawn-sky → cityscape silhouette
+ * → wooden ground. Subtle floating "achievement" sparkles.
+ * ============================================================ */
+.mk-meta-bg {
+  position: relative;
+  background:
+    /* Soft achievement sparkles */
+    radial-gradient(circle at 15% 25%, rgba(255,255,255,0.15) 0%, transparent 1.5%),
+    radial-gradient(circle at 78% 35%, rgba(255,255,255,0.12) 0%, transparent 1.2%),
+    radial-gradient(circle at 42% 15%, rgba(255,255,255,0.18) 0%, transparent 1.5%),
+    radial-gradient(circle at 88% 12%, rgba(255,255,255,0.10) 0%, transparent 1.0%),
+    /* Sunrise glow at the horizon */
+    radial-gradient(ellipse 80% 30% at 50% 60%, rgba(255, 200, 100, 0.28) 0%, transparent 70%),
+    /* Cityscape silhouette band */
+    linear-gradient(180deg,
+      transparent 0%,
+      transparent 60%,
+      rgba(40, 22, 8, 0.18) 62%,
+      rgba(40, 22, 8, 0.32) 70%,
+      rgba(40, 22, 8, 0.20) 78%,
+      transparent 82%
+    ),
+    /* Dawn sky gradient */
+    linear-gradient(180deg,
+      #2a3d5e 0%,
+      #6b5b88 22%,
+      #d49a72 50%,
+      #f0c890 70%,
+      #f5d4a0 100%
+    );
+  background-attachment: local;
+  overflow-x: hidden;
+}
+/* Cityscape silhouette — drawn with repeating-linear-gradient buildings */
+.mk-meta-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* Pyramid / dome silhouettes */
+    radial-gradient(ellipse 80px 40px at 18% 62%, #2a1c12 0%, #2a1c12 60%, transparent 62%),
+    radial-gradient(ellipse 60px 32px at 82% 64%, #2a1c12 0%, #2a1c12 60%, transparent 62%),
+    /* Rectangular building tower silhouettes */
+    linear-gradient(90deg,
+      transparent 4%,  #1f140a 4%,  #1f140a 9%,  transparent 9%,
+      transparent 12%, #1f140a 12%, #1f140a 16%, transparent 16%,
+      transparent 22%, #271810 22%, #271810 28%, transparent 28%,
+      transparent 32%, #1f140a 32%, #1f140a 38%, transparent 38%,
+      transparent 44%, #271810 44%, #271810 48%, transparent 48%,
+      transparent 55%, #1f140a 55%, #1f140a 60%, transparent 60%,
+      transparent 65%, #271810 65%, #271810 72%, transparent 72%,
+      transparent 76%, #1f140a 76%, #1f140a 80%, transparent 80%,
+      transparent 86%, #271810 86%, #271810 92%, transparent 92%,
+      transparent 96%
+    );
+  background-size: 100% 100%, 100% 100%, 100% 22%;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-position: 0 0, 0 0, 0 66%;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+.mk-meta-bg > * { position: relative; z-index: 1; }
+
+/* --- 9-step progress bar (PRD 3, auto-scale) --- */
+.mk-meta-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.mk-meta-progress-track {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 4px;
+  padding: 5px;
+  background: rgba(20, 12, 4, 0.40);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 200, 80, 0.30);
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,0.45),
+    0 2px 8px rgba(0,0,0,0.20);
+}
+.mk-meta-progress-seg {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 248, 220, 0.20);
+  border: 1px solid rgba(255, 200, 80, 0.32);
+  transition: background 200ms ease, box-shadow 200ms ease;
+}
+.mk-meta-progress-seg.is-filled {
+  background: linear-gradient(180deg, #ffd87b 0%, #ffb23a 70%, #d98708 100%);
+  border-color: rgba(180, 100, 20, 0.60);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 6px rgba(255, 180, 80, 0.55);
+}
+.mk-meta-progress-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff8ed;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.40);
+}
+.mk-meta-progress.is-complete .mk-meta-progress-label {
+  font-size: 14px;
+  color: #ffd87b;
+}
+
+/* --- Item card action row: price chip on top, upgrade button below.
+   Stacks vertically because item cards in a 2-column grid are narrow
+   and side-by-side would force ugly text wrapping. --- */
+.mk-meta-action-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 6px;
+}
+.mk-meta-action-row .mk-meta-price { align-self: center; }
+.mk-meta-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff8e8 0%, #f3dfaa 100%);
+  border: 1.5px solid rgba(180, 120, 40, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 2px 0 rgba(140, 90, 40, 0.30);
+  flex-shrink: 0;
+}
+.mk-meta-price-num {
+  font-size: 13px;
+  font-weight: 900;
+  color: #2c1608;
+  font-variant-numeric: tabular-nums;
+}
+.mk-meta-buy {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  background: linear-gradient(180deg, #5ed26a 0%, #2e9637 100%);
+  box-shadow: 0 3px 0 #1f6e26, 0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.45);
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.mk-meta-buy:hover  { filter: brightness(1.08); }
+.mk-meta-buy:active { transform: scale(0.96); }
+.mk-meta-buy.is-poor {
+  background: linear-gradient(180deg, #c8c8c8 0%, #8c8c8c 100%);
+  box-shadow: 0 2px 0 #5a5a5a, inset 0 1px 0 rgba(255,255,255,0.25);
+  font-size: 12px;
+  cursor: not-allowed;
+}
+.mk-meta-buy.is-processing { opacity: 0.6; pointer-events: none; }
+
+/* --- Crown for max-tier items (PRD 3) --- */
+.mk-meta-crown {
+  margin-top: 4px;
+  font-size: 32px;
+  text-align: center;
+  filter: drop-shadow(0 2px 4px rgba(180, 100, 20, 0.5));
+  animation: mkCrownFloat 2.6s ease-in-out infinite;
+}
+@keyframes mkCrownFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* ============================================================ */
+/* Info "i" button next to investment platform titles (PRD 2). */
+.mk-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffd98a 0%, #d98708 100%);
+  border: 1.5px solid #8a5500;
+  color: #2a1508;
+  font-size: 12px;
+  font-weight: 900;
+  font-style: italic;
+  cursor: pointer;
+  box-shadow: 0 1px 0 #6b4200, 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 100ms ease;
+}
+.mk-info-btn:hover  { transform: scale(1.10); }
+.mk-info-btn:active { transform: scale(0.92); }
+
+/* Info popup overlay + card. */
+.mk-info-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 4, 0.55);
+  backdrop-filter: blur(4px);
+  padding: 20px;
+  animation: mkInfoFade 180ms ease-out;
+}
+@keyframes mkInfoFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.mk-info-card {
+  max-width: 320px;
+  width: 100%;
+  background: linear-gradient(180deg, #fff8ed 0%, #f1dfb1 100%);
+  border: 2px solid rgba(120, 70, 20, 0.40);
+  border-radius: 18px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  animation: mkInfoPop 220ms cubic-bezier(0.18, 1.3, 0.45, 1);
+}
+@keyframes mkInfoPop {
+  from { transform: scale(0.85); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.mk-info-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #2c1608;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.mk-info-body {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a2810;
+  margin-bottom: 14px;
+}
+.mk-info-close {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #ffb23a 0%, #d98708 100%);
+  box-shadow: 0 2px 0 #8a5500, 0 3px 6px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 100ms ease;
+}
+.mk-info-close:active { transform: scale(0.97); }
+
+/* Finance Center SELL ("מכירה") button — red to signal exit action.
+   Sits on the Finance investment cards alongside the green "קנייה" buy
+   button so the two actions read as opposites at a glance (PRD 2). */
+.mk-btn-sell {
+  background: linear-gradient(180deg, #ef4d4d 0%, #b81f1f 100%);
+  border: none;
+  box-shadow:
+    0 3px 0 0 #831313,
+    0 4px 10px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  letter-spacing: 0.02em;
+  transition: transform 100ms ease, filter 100ms ease;
+}
+.mk-btn-sell:hover  { filter: brightness(1.08); }
+.mk-btn-sell:active { transform: scale(0.96); }
+
+/* Floating "+N coin" reward feedback that pops above the ticket on sell. */
+.mk-ticket-reward-float {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff4cf 0%, #ffd87b 100%);
+  border: 2px solid #c98a1c;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+/* --- Section B: MERGE GRID ------------------------------------- */
+/* Painted wooden grid frame with 24 cream cells. Items render at
+   absolute positions matching the painted cell centres (computed by
+   scripts/measure-grid-cells.py). */
+.mk-grid {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1600 / 1078;
+  background-image: url('/assets/board/grid-frame.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 4px 10px rgba(60, 30, 10, 0.30));
+}
+
+/* A single grid cell, positioned absolutely at its painted centre.
+   `--x` and `--y` come from inline style. The cell is sized as a
+   square ~13% of the grid's width — slightly smaller than the painted
+   cell square so items don't crowd the painted edge. */
+.mk-grid-cell {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 13%;
+  /* Square via aspect-ratio; padding-bottom trick avoided so flex
+     children inside (drag handle, item bubble) measure correctly. */
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12%;
+  /* Cells themselves are invisible — the painted PNG already shows
+     the cream square. We only render an outline on hover/highlight. */
+}
+.mk-grid-cell.is-hover {
+  box-shadow: 0 0 0 3px rgba(255, 200, 80, 0.85),
+              0 0 16px 4px rgba(255, 200, 80, 0.55);
+}
+.mk-grid-cell.is-highlight {
+  box-shadow: 0 0 0 3px rgba(120, 220, 120, 0.85),
+              0 0 16px 4px rgba(120, 220, 120, 0.55);
+  animation: cellHighlightPulse 1.4s ease-in-out infinite;
+}
+@keyframes cellHighlightPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.04); }
+}
+
+/* --- Section C: SPAWNER PANEL ---------------------------------- */
+/* Three painted producer cards. We use the *individual* card PNGs
+   (cropped from the full panel by scripts/split-spawner-panel.py)
+   so each card can desaturate independently when disabled. */
+.mk-spawner-row {
+  display: flex;
+  gap: 6px;          /* breathing room between framed cards */
+  justify-content: center;
+  align-items: stretch;
+  width: 100%;
+  /* Padding around the panel so card edges, glow, and gold borders all
+     show fully — never clipped by the page edge or the section below.
+     box-sizing: border-box so total width still equals 100%. */
+  padding: 10px 12px 14px;
+  box-sizing: border-box;
+  filter: drop-shadow(0 4px 8px rgba(60, 30, 10, 0.30));
+}
+
+.mk-spawner-card {
+  flex: 1 1 0;
+  min-width: 0;      /* allow flex children to shrink below content size */
+  max-width: 33%;    /* 3 cards must always fit the row width */
+  /* Original full-frame crop is 426x408. */
+  aspect-ratio: 426 / 408;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  transition: transform 120ms ease-out, filter 200ms ease;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  position: relative;
+  /* Idle bounce so each card reads as an animated icon rather than a
+     static picture. Stagger the three cards via animation-delay below. */
+  animation: spawnerIdle 2.4s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+.mk-spawner-card:nth-child(1) { animation-delay: 0s; }
+.mk-spawner-card:nth-child(2) { animation-delay: 0.4s; }
+.mk-spawner-card:nth-child(3) { animation-delay: 0.8s; }
+
+@keyframes spawnerIdle {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-3px) scale(1.015); }
+}
+
+.mk-spawner-card:hover  { animation-play-state: paused; transform: scale(1.06); }
+.mk-spawner-card:active { animation-play-state: paused; transform: scale(0.95); }
+.mk-spawner-card.is-disabled {
+  filter: grayscale(0.85) brightness(0.65);
+  cursor: not-allowed;
+  animation-play-state: paused;
+}
+.mk-spawner-card.is-disabled:hover  { transform: none; }
+.mk-spawner-card.is-disabled:active { transform: scale(0.98); } /* tiny muted press */
+.mk-spawner-card.is-shaking {
+  animation: spawnerShake 0.32s ease-in-out;
+}
+@keyframes spawnerShake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-6px); }
+  50%      { transform: translateX(6px); }
+  75%      { transform: translateX(-3px); }
+}
+
+/* Spawn flash: card pops with a gold sheen when tapped successfully.
+   Triggered by adding `is-spawning` class for ~280ms in ProducerArea. */
+.mk-spawner-card.is-spawning {
+  animation: spawnerSpawnPop 0.32s ease-out;
+}
+@keyframes spawnerSpawnPop {
+  0%   { transform: scale(0.95); filter: brightness(1) saturate(1); }
+  35%  { transform: scale(1.10); filter: brightness(1.35) saturate(1.25)
+           drop-shadow(0 0 10px rgba(255, 220, 120, 0.85)); }
+  70%  { transform: scale(0.98); filter: brightness(1.10) saturate(1.10); }
+  100% { transform: scale(1);    filter: brightness(1) saturate(1); }
+}
+
+/* Sparkle pseudo — bright radial flash that fades. Sits on top of the
+   card for the duration of is-spawning, then unmounts. */
+.mk-spawner-card.is-spawning::after {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 18%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 240, 180, 0.85) 0%,
+    rgba(255, 200, 80, 0.55) 30%,
+    rgba(255, 200, 80, 0)   70%
+  );
+  animation: spawnerSparkle 0.32s ease-out forwards;
+}
+@keyframes spawnerSparkle {
+  0%   { opacity: 0; transform: scale(0.6); }
+  40%  { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+/* New producer art (replaces the old split panel crops). Each PNG is the
+   complete card (purple gradient tile + gold border + glow + bolt chip
+   + character icon) so we use background-size: contain unchanged. */
+.mk-spawner-card--sushi  { background-image: url('/assets/producers/spawner-1.png'); }
+.mk-spawner-card--burger { background-image: url('/assets/producers/spawner-2.png'); }
+.mk-spawner-card--art    { background-image: url('/assets/producers/spawner-3.png'); }
+
+/* Wooden floor strip below the spawner panel (matches full-reference) */
+.mk-floor {
+  width: 100%;
+  height: 60px;
+  background:
+    linear-gradient(180deg,
+      #8a5a30 0%,
+      #6b4220 40%,
+      #5a3618 100%);
+  /* Subtle plank lines */
+  background-image:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.12) 0 1px,
+      transparent 1px 86px),
+    linear-gradient(180deg,
+      #8a5a30 0%,
+      #6b4220 40%,
+      #5a3618 100%);
+}
+
+/* =================================================================
+   AWAITING-ASSET marker — used to flag visuals that will be replaced
+   when the user supplies the painted artwork.
+   Renders a small red ribbon + dashed outline; pointer-events disabled
+   so it never interferes with gameplay.
+   ================================================================= */
+.awaiting-asset {
+  position: relative;
+  outline: 1.5px dashed rgba(180, 40, 40, 0.55);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+.awaiting-asset::after {
+  content: 'AWAITING ASSET — ' attr(data-asset);
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(180, 40, 40, 0.92);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.awaiting-asset--corner::after {
+  top: 6px;
+  left: auto;
+  right: 6px;
+  transform: none;
+}
+
+/* ===== MARKET STALL COUNTER ===== */
+.stall-counter {
+  background:
+    linear-gradient(180deg, #c98a4a 0%, #a36e34 50%, #7a4e20 100%);
+  border-top: 3px solid #e3aa6a;
+  box-shadow:
+    inset 0 2px 0 rgba(255,220,170,0.4),
+    inset 0 -3px 0 rgba(0,0,0,0.25),
+    0 6px 14px rgba(0,0,0,0.25);
+}
+.stall-counter::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -8px;
+  height: 8px;
+  background: linear-gradient(180deg, #6a3e18 0%, #4a2810 100%);
+  border-radius: 0 0 6px 6px;
+}
+
+/* ===== AWNING IMPROVED ===== */
+.awning-scalloped {
+  position: relative;
+  height: 42px;
+  background: repeating-linear-gradient(
+    90deg,
+    #e63838 0px,
+    #e63838 20px,
+    #fff5ee 20px,
+    #fff5ee 40px
+  );
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.25),
+    inset 0 -4px 0 rgba(0,0,0,0.12),
+    inset 0 2px 0 rgba(255,255,255,0.35);
+  border-radius: 8px 8px 0 0;
+}
+.awning-scalloped::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -10px;
+  height: 12px;
+  background-image: radial-gradient(circle at 8px 0px, #e63838 7px, transparent 7.5px);
+  background-size: 16px 12px;
+  background-repeat: repeat-x;
+  filter: drop-shadow(0 2px 1px rgba(0,0,0,0.18));
+}
+
+/* ===== LANTERN ===== */
+.lantern {
+  position: relative;
+  width: 22px;
+  height: 30px;
+  background: radial-gradient(circle at 50% 40%, #ffd36b 0%, #f39a2f 55%, #b86520 100%);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow:
+    0 0 12px rgba(255,180,80,0.7),
+    0 0 24px rgba(255,160,60,0.35),
+    inset -2px -4px 6px rgba(120,60,10,0.35),
+    inset 2px 2px 4px rgba(255,240,180,0.4);
+  animation: lanternGlow 3s ease-in-out infinite;
+}
+.lantern::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  background: #4a2810;
+}
+.lantern::after {
+  content: '';
+  position: absolute;
+  left: 3px; right: 3px; top: 40%;
+  height: 2px;
+  background: rgba(120,60,10,0.4);
+  border-radius: 2px;
+}
+@keyframes lanternGlow {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,180,80,0.7), 0 0 24px rgba(255,160,60,0.35), inset -2px -4px 6px rgba(120,60,10,0.35), inset 2px 2px 4px rgba(255,240,180,0.4); }
+  50%      { box-shadow: 0 0 18px rgba(255,200,100,0.9), 0 0 36px rgba(255,170,70,0.5),  inset -2px -4px 6px rgba(120,60,10,0.35), inset 2px 2px 4px rgba(255,240,180,0.4); }
+}
+
+/* ===== REWARD BUBBLE (coin bubble above characters) ===== */
+.reward-bubble {
+  background: linear-gradient(180deg, #fffaf0 0%, #fff0d4 100%);
+  border: 2px solid #c98a3a;
+  border-radius: 999px;
+  padding: 3px 10px 3px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow:
+    0 2px 0 rgba(120,60,20,0.3),
+    0 3px 8px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.85);
+  position: relative;
+}
+.reward-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid #c98a3a;
+}
+
+/* ===== TRAY ===== */
+.stall-tray {
+  background: linear-gradient(180deg, #3a2410 0%, #2a1a0a 100%);
+  border: 2px solid #6a4020;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,200,140,0.2),
+    inset 0 -2px 4px rgba(0,0,0,0.3);
+  padding: 3px 6px;
+}
+
+/* ===== ITEM CATEGORY (spawner) CARD — purple/gold framed ===== */
+.spawner-card {
+  position: relative;
+  background:
+    radial-gradient(circle at 50% 30%, #b066d6 0%, #7b1fa2 55%, #4a0072 100%);
+  border: 3px solid #ffd84a;
+  border-radius: 14px;
+  box-shadow:
+    0 4px 0 0 #9a6a0a,
+    0 6px 14px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.3),
+    0 0 14px rgba(255,180,80,0.35);
+  overflow: hidden;
+}
+.spawner-card::before {
+  content: '';
+  position: absolute;
+  top: -40%; left: -40%;
+  width: 180%; height: 60%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, transparent 60%);
+  pointer-events: none;
+  transform: rotate(-8deg);
+}
+.spawner-card.disabled {
+  filter: grayscale(0.7) brightness(0.65);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.35);
+}
+
+/* Energy bolt badge on spawner — gold disc with the painted bolt PNG
+   sitting inside it. Glyph emoji removed; child <span class="mk-icon
+   mk-icon-bolt"> renders the asset. The disc keeps its gradient so
+   the badge still reads as a bright energy chip on the dark card. */
+.spawner-bolt {
+  position: absolute;
+  bottom: 4px; right: 6px;
+  width: 22px; height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, #ffdf6a 0%, #ffb023 70%);
+  border-radius: 50%;
+  border: 1.5px solid #c98a0a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+  line-height: 1;
+}
+.spawner-bolt .mk-icon {
+  /* PNG inside the gold disc — slightly inset to leave a thin gold ring */
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== BOTTOM NAV ILLUSTRATED CARD ===== */
+.nav-illus-card {
+  background: linear-gradient(180deg, #fff6e3 0%, #ffd59a 100%);
+  border: 2.5px solid #b87a3a;
+  border-radius: 14px;
+  padding: 6px 10px;
+  box-shadow:
+    0 3px 0 #7a4a1e,
+    0 4px 10px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 54px;
+  transition: transform 0.1s;
+}
+.nav-illus-card:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #7a4a1e, 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+.nav-illus-card.active {
+  background: linear-gradient(180deg, #ffe8b5 0%, #ffb847 100%);
+  border-color: #ff8a0a;
+  box-shadow:
+    0 3px 0 #9a5e20,
+    0 5px 14px rgba(255,140,40,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 0 14px rgba(255,180,60,0.45);
+}
+
+/* ===== CLEAN CREAM GRID PANEL ===== */
+.grid-panel-cream {
+  background: linear-gradient(180deg, #fff8e6 0%, #f5e2b8 100%);
+  border: 3px solid #c98a4a;
+  border-radius: 22px;
+  box-shadow:
+    0 6px 14px rgba(60,30,10,0.35),
+    inset 0 2px 0 rgba(255,255,255,0.7),
+    inset 0 -3px 0 rgba(180,120,50,0.25);
+}
+
+.grid-cell-cream {
+  background: linear-gradient(180deg, #fff4d8 0%, #f0dcab 100%);
+  border: 1.5px solid #d8b06e;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.8), inset 0 -1px 2px rgba(180,120,50,0.18);
+}
+.grid-cell-cream-empty {
+  background: linear-gradient(180deg, rgba(255,244,216,0.5) 0%, rgba(240,220,170,0.4) 100%);
+  border: 1.5px dashed rgba(180,120,60,0.4);
+  border-radius: 10px;
+}
+
+/* NOTE: The legacy small circular .level-badge was retired when the
+   mockup-faithful .mk-level-badge was introduced (purple-glowing pill,
+   defined alongside .mk-avatar-frame above). */
+
+.bg-finance-pattern {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(100,180,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(50,100,200,0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #1a3a5c 0%, #152e4a 40%, #0f2238 100%);
+}
+
+.bg-goals-pattern {
+  background:
+    radial-gradient(circle at 40% 30%, rgba(200,100,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 60% 70%, rgba(150,50,200,0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #2e1a4a 0%, #231040 40%, #1a0a30 100%);
+}
+
+/* =====================================================================
+ * DESIGN-SYSTEM UTILITY LAYER
+ * Consumed by new React primitives (src/components/ui/*). Keep these
+ * class names stable — components depend on them.
+ * ===================================================================== */
+
+/* --- Typography scale (matches src/lib/designSystem.ts) --- */
+.ds-text-hero    { font-size: 32px; font-weight: 900; letter-spacing: -0.01em; }
+.ds-text-title   { font-size: 24px; font-weight: 800; }
+.ds-text-body    { font-size: 16px; font-weight: 500; }
+.ds-text-caption { font-size: 12px; font-weight: 600; }
+.ds-text-tiny    { font-size: 10px; font-weight: 700; letter-spacing: 0.02em; }
+.ds-text-num {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+.ds-text-header-shadow {
+  text-shadow: 0 2px 0 rgba(42,21,8,0.45), 0 3px 6px rgba(0,0,0,0.25);
+}
+
+/* --- Shadow utilities --- */
+.ds-shadow-subtle { box-shadow: var(--ds-shadow-subtle); }
+.ds-shadow-medium { box-shadow: var(--ds-shadow-medium); }
+.ds-shadow-heavy  { box-shadow: var(--ds-shadow-heavy); }
+.ds-glow-primary  { box-shadow: var(--ds-glow-primary); }
+.ds-glow-success  { box-shadow: var(--ds-glow-success); }
+
+/* --- Beveled 3D button (used by <GameButton/>) --- */
+.ds-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--ds-radius-lg);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 120ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 120ms ease;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.22),
+    0 6px 14px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    inset 0 -2px 0 rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.ds-btn::before {
+  /* top gloss highlight */
+  content: '';
+  position: absolute;
+  inset: 2px 3px auto 3px;
+  height: 40%;
+  border-radius: calc(var(--ds-radius-lg) - 2px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.ds-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.22),
+    0 2px 4px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.ds-btn:disabled {
+  filter: grayscale(0.6) brightness(0.85);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ds-btn--primary {
+  background: linear-gradient(180deg, var(--color-ds-primary-200) 0%, var(--color-ds-primary-400) 55%, var(--color-ds-primary-600) 100%);
+  color: var(--color-ds-neutral-800);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+}
+.ds-btn--success {
+  background: linear-gradient(180deg, var(--color-ds-success-200) 0%, var(--color-ds-success-400) 55%, var(--color-ds-success-600) 100%);
+}
+.ds-btn--danger {
+  background: linear-gradient(180deg, var(--color-ds-danger-200) 0%, var(--color-ds-danger-400) 55%, var(--color-ds-danger-600) 100%);
+}
+.ds-btn--purple {
+  background: linear-gradient(180deg, var(--color-ds-secondary-200) 0%, var(--color-ds-secondary-400) 55%, var(--color-ds-secondary-600) 100%);
+}
+/* size variants */
+.ds-btn--sm { padding: 6px 12px; font-size: 12px; border-radius: var(--ds-radius-md); }
+.ds-btn--md { padding: 10px 20px; font-size: 14px; }
+.ds-btn--lg { padding: 14px 28px; font-size: 16px; }
+
+/* --- Card surface --- */
+.ds-card {
+  background: linear-gradient(180deg, var(--color-ds-neutral-50) 0%, var(--color-ds-neutral-200) 100%);
+  border: 2px solid var(--color-ds-neutral-400);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-medium);
+}
+
+/* --- Count-up number flash (briefly scale + coin-glow on change) --- */
+@keyframes countPop {
+  0%   { transform: scale(1); filter: brightness(1); }
+  30%  { transform: scale(1.25); filter: brightness(1.25); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.ds-count-pop { animation: countPop 420ms cubic-bezier(0.34,1.56,0.64,1); }
+
+/* --- Toast slide-in / slide-out (used by <ToastHost/>) --- */
+@keyframes toastIn {
+  0%   { transform: translate(-50%, -40px); opacity: 0; }
+  60%  { transform: translate(-50%, 4px);   opacity: 1; }
+  100% { transform: translate(-50%, 0);      opacity: 1; }
+}
+@keyframes toastOut {
+  0%   { transform: translate(-50%, 0);     opacity: 1; }
+  100% { transform: translate(-50%, -40px); opacity: 0; }
+}
+.ds-toast-in  { animation: toastIn  260ms cubic-bezier(0.34,1.56,0.64,1) both; }
+.ds-toast-out { animation: toastOut 220ms ease-in both; }
+
+/* --- Merge success particle burst (pure-CSS starburst) --- */
+@keyframes burstOut {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+}
+.ds-merge-burst {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, rgba(255,235,150,0.95) 0%, rgba(255,200,80,0.5) 40%, transparent 70%);
+  animation: burstOut 520ms ease-out forwards;
+}
+.ds-merge-burst::before,
+.ds-merge-burst::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg,
+      transparent 0deg 18deg, rgba(255,220,100,0.85) 18deg 30deg,
+      transparent 30deg 78deg, rgba(255,220,100,0.85) 78deg 90deg,
+      transparent 90deg 138deg, rgba(255,220,100,0.85) 138deg 150deg,
+      transparent 150deg 198deg, rgba(255,220,100,0.85) 198deg 210deg,
+      transparent 210deg 258deg, rgba(255,220,100,0.85) 258deg 270deg,
+      transparent 270deg 318deg, rgba(255,220,100,0.85) 318deg 330deg,
+      transparent 330deg);
+}
+.ds-merge-burst::after {
+  transform: rotate(15deg) scale(0.75);
+  opacity: 0.85;
+}
+
+/* --- Grid-item hover lift (applied to items at rest on the board) --- */
+.ds-item-lift {
+  transition: transform 180ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 180ms ease;
+}
+.ds-item-lift:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* --- Shimmer overlay for "important" numbers (balance etc.) --- */
+@keyframes shimmerSlide {
+  0%   { background-position: -120% 0; }
+  100% { background-position: 220% 0; }
+}
+.ds-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.ds-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg,
+      transparent 0%, transparent 40%,
+      rgba(255,255,255,0.35) 50%,
+      transparent 60%, transparent 100%);
+  background-size: 220% 100%;
+  animation: shimmerSlide 3.2s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* --- Coin badge: painted coin PNG (was a beveled gold star). The
+   wrapper stays for backward-compatibility with everything that still
+   renders <span class="ds-coin-badge">…</span>; the visual is now
+   just the transparent PNG, no gradient disc. --- */
+.ds-coin-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  background-image: url('/assets/icons/coin.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 1px rgba(80, 40, 10, 0.28))
+          drop-shadow(0 0 1px rgba(80, 40, 10, 0.15));
+  font-size: 0; /* hide any legacy emoji text content */
+  line-height: 0;
+}
+
+/* ============================================================
+ * Stage 2 — Interest vs Inflation hedge bars
+ *   Used by <InterestHedgeCompare /> (Stage2Visuals.tsx).
+ *   Each row: label · bar track · value.
+ *   The fill width animates from 0 to var(--pct).
+ * ============================================================ */
+.hedge-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 56px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+}
+.hedge-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #2a1508;
+  font-weight: 800;
+  font-size: 14px;
+}
+.hedge-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #888;
+}
+.hedge-dot--red   { background: #c4341c; box-shadow: 0 0 6px rgba(196, 52, 28, 0.6); }
+.hedge-dot--green { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
+.hedge-bar {
+  position: relative;
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(74, 41, 0, 0.08);
+  border: 1px solid rgba(74, 41, 0, 0.18);
+  box-shadow: inset 0 1px 2px rgba(74, 41, 0, 0.12);
+}
+.hedge-bar--track { width: 100%; }
+.hedge-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 999px;
+  animation: hedgeBarGrow 1000ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.hedge-bar-fill--inflation {
+  background: linear-gradient(90deg, #e85a3a 0%, #c4341c 100%);
+  box-shadow: 0 0 8px rgba(196, 52, 28, 0.35) inset;
+}
+.hedge-bar-fill--interest {
+  background: linear-gradient(90deg, #4ade80 0%, #22c55e 100%);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.35) inset;
+  animation-delay: 400ms;
+}
+@keyframes hedgeBarGrow {
+  from { width: 0; }
+  to   { width: var(--pct, 30%); }
+}
+.hedge-bar-value {
+  font-weight: 900;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.hedge-value--red   { color: #c4341c; }
+.hedge-value--green { color: #22c55e; }
+.hedge-conclusion {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2a1508;
+  max-width: 320px;
+  line-height: 1.5;
+  opacity: 0;
+  animation: inflFadeIn 480ms cubic-bezier(0.16, 1, 0.3, 1) 1800ms forwards;
+}
+.hedge-conclusion-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 2px 4px rgba(34, 197, 94, 0.4);
+  transform: translateY(2px);
+}
+
+/* ============================================================
+ * Stage 2 — Compound interest graph
+ *   Used by <CompoundGraph /> (Stage2Visuals.tsx).
+ *   Two paths animate in left-to-right via stroke-dasharray.
+ * ============================================================ */
+.compound-graph-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+.compound-line {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: compoundDraw 1400ms ease-out forwards;
+}
+.compound-line--simple   { animation-delay: 150ms; }
+.compound-line--compound { animation-delay: 700ms; }
+@keyframes compoundDraw {
+  to { stroke-dashoffset: 0; }
+}
+.compound-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: #fff8ed;
+  font-size: 13px;
+  font-weight: 700;
+}
+.compound-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================================
+ * Stage 2 — Red price-pulse override (meta inflation tick).
+ * Used when MetaInflationFactor jumps; price flashes red instead
+ * of the default gold to underline "this is bad for you".
+ * ============================================================ */
+@keyframes metaPricePulseRed {
+  0%   { color: inherit; transform: scale(1); }
+  30%  { color: #ff5a4a; transform: scale(1.12); text-shadow: 0 0 8px rgba(255, 90, 74, 0.6); }
+  100% { color: inherit; transform: scale(1); text-shadow: none; }
+}
+.meta-price-pulse-red {
+  animation: metaPricePulseRed 700ms ease-out;
+}
+
+/* ============================================================
+ * Stage 2 — Shake (used by TimeSpeederButton when speeders = 0).
+ * ============================================================ */
+@keyframes tspeedShake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-4px) rotate(-3deg); }
+  40%      { transform: translateX(4px)  rotate(3deg);  }
+  60%      { transform: translateX(-3px) rotate(-2deg); }
+  80%      { transform: translateX(3px)  rotate(2deg);  }
+}
+.tspeed-shake {
+  animation: tspeedShake 380ms ease-in-out;
+}
+
+/* ============================================================
+ * Stage 2 — Deposit account "unlock" entrance animation.
+ * Applied on the account card the first time the deposit feature
+ * is revealed (step 2.3 "deposit_intro").
+ * ============================================================ */
+@keyframes depositReveal {
+  0%   { opacity: 0; transform: translateY(20px) scale(0.9); box-shadow: 0 0 0 rgba(255, 216, 64, 0); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1.04); box-shadow: 0 0 26px rgba(255, 216, 64, 0.55); }
+  100% { opacity: 1; transform: translateY(0) scale(1);      box-shadow: 0 0 0 rgba(255, 216, 64, 0); }
+}
+.deposit-reveal {
+  animation: depositReveal 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+ * Mission Reminder ↗ Widget (PRD Stage-2 follow-up).
+ *   - Fixed to bottom-right of the viewport, ~80px above the tab bar
+ *   - 48×48 circular gold badge with an ↗ arrow + small mission-number chip
+ *   - Soft pulse halo + unread dot when there's new progress
+ *   - Never overlaps header, canvas, or bottom nav
+ * ============================================================ */
+.mission-reminder-fab {
+  position: fixed;
+  z-index: 1040; /* below speeder anim (1050+), above page content */
+  right: 14px;
+  bottom: 104px; /* clears the BottomNav (~88px) + breathing room */
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffe18a 0%, #ffb938 55%, #c87a00 100%);
+  box-shadow:
+    0 4px 0 0 #7a4a00,
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  color: #4a2900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease-out;
+}
+.mission-reminder-fab:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 0 #7a4a00,
+    0 5px 10px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.mission-reminder-fab-arrow {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1;
+  display: block;
+  transform: translate(-1px, 1px); /* visually centers ↗ inside the circle */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.mission-reminder-fab-badge {
+  position: absolute;
+  bottom: -4px;
+  inset-inline-start: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #5b2f8a 0%, #3d1d63 100%);
+  color: #fff8ed;
+  font-size: 11px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff8ed;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+.mission-reminder-fab-dot {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff5a4a;
+  border: 2px solid #fff8ed;
+  box-shadow: 0 0 8px rgba(255, 90, 74, 0.7);
+  animation: missionDotPulse 1600ms ease-in-out infinite;
+}
+.mission-reminder-fab--pulse::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 216, 64, 0.55);
+  animation: missionFabPulse 2000ms ease-out infinite;
+  pointer-events: none;
+}
+@keyframes missionDotPulse {
+  0%, 100% { transform: scale(1);   opacity: 1;   }
+  50%      { transform: scale(1.2); opacity: 0.7; }
+}
+@keyframes missionFabPulse {
+  0%   { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0;   }
+}
+
+/* Reminder-mode popup additions: caption above text, progress bar
+ * below text, ✕ close button top-start. The popup itself reuses
+ * `.tut-popup` styling. */
+.tut-popup-close {
+  position: absolute;
+  top: 6px;
+  inset-inline-start: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.08);
+  color: #4a2900;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms ease;
+}
+.tut-popup-close:hover,
+.tut-popup-close:focus-visible {
+  background: rgba(0, 0, 0, 0.16);
+  outline: none;
+}
+.tut-popup-caption {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8a5a00;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.tut-popup-progress {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+}
+.tut-popup-progress-track {
+  position: relative;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.tut-popup-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd840 0%, #ff9a1f 100%);
+  border-radius: 999px;
+  transition: width 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 8px rgba(255, 200, 64, 0.5) inset;
+}
+.tut-popup-progress-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: #4a2900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+ * Stage 3 — Savings habit visuals
+ * ============================================================ */
+.savings-habit-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+.savings-line {
+  stroke-dasharray: 700;
+  stroke-dashoffset: 700;
+  animation: savingsDraw 1400ms cubic-bezier(0.16, 1, 0.3, 1) 150ms forwards;
+}
+@keyframes savingsDraw {
+  to { stroke-dashoffset: 0; }
+}
+.savings-habit-legend {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center;
+  color: #fff8ed; font-size: 13px; font-weight: 700;
+}
+.savings-habit-legend > span {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+/* Compare bars (waited vs early) */
+.savings-compare {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 340px;
+}
+.savings-compare-col {
+  flex: 1 1 0;
+  display: flex; flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.savings-compare-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+.savings-compare-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff8ed;
+  text-align: center;
+  max-width: 110px;
+  line-height: 1.3;
+}
+.savings-compare-bar {
+  width: 56px;
+  height: 140px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+.savings-compare-bar-fill {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 0;
+  border-radius: 0 0 8px 8px;
+  animation: savingsCompareGrow 1100ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes savingsCompareGrow {
+  from { height: 0; }
+  to   { height: var(--target-h, 50%); }
+}
+.savings-compare-bar-fill--red {
+  background: linear-gradient(180deg, #ff7a4a 0%, #ff4a3a 100%);
+  box-shadow: 0 0 12px rgba(255, 90, 74, 0.4) inset;
+  animation-delay: 200ms;
+}
+.savings-compare-bar-fill--green {
+  background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+  box-shadow: 0 0 12px rgba(74, 222, 128, 0.4) inset;
+  animation-delay: 400ms;
+}
+.savings-compare-value {
+  font-size: 14px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.savings-value--red   { color: #ff7a4a; }
+.savings-value--green { color: #4ade80; }
+
+/* Lesson-branch popup (3.3) — wider, multi-line, larger margin. */
+.lesson-branch-text {
+  max-width: 340px;
+  color: #fff8ed;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  padding: 4px 8px;
+}
+
+/* Sale-active banner — small pill at the top of /goals */
+.sale-active-banner {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  margin: 6px auto 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff7a4a 0%, #ffb938 50%, #ff7a4a 100%);
+  background-size: 200% 100%;
+  color: #2a1500;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(255, 122, 74, 0.4);
+  animation: salePulse 1800ms ease-in-out infinite alternate;
+  width: fit-content;
+}
+@keyframes salePulse {
+  from { background-position: 0% 50%; box-shadow: 0 2px 8px rgba(255, 122, 74, 0.35); }
+  to   { background-position: 100% 50%; box-shadow: 0 4px 14px rgba(255, 122, 74, 0.6); }
+}
+
+/* Tag on meta-item price to show the discount during a sale */
+.meta-price-discount {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #2a1500;
+  background: #ffd840;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.meta-price-strikethrough {
+  text-decoration: line-through;
+  opacity: 0.55;
+  margin-inline-end: 4px;
+}
+
+/* ============================================================
+ * Stage 4 — Stock market visuals (S&P 500)
+ * ============================================================ */
+
+/* Screen A — stock pieces (pie of 5 wedges around a company emoji) */
+.stock-pieces-svg {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+}
+.stock-piece {
+  transform-origin: 100px 100px;
+  transform: scale(0);
+  animation: stockPieceIn 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes stockPieceIn {
+  to { transform: scale(1); }
+}
+.stock-pieces-caption {
+  color: #fff8ed;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Screen B — index basket */
+.index-basket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.index-basket-handle {
+  font-size: 32px;
+}
+.index-basket-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 14px;
+  width: 280px;
+  background: rgba(255, 200, 80, 0.12);
+  border: 2px solid rgba(255, 200, 80, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35) inset;
+}
+.index-basket-cell {
+  font-size: 22px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 6px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: basketCellIn 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes basketCellIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Screen C — S&P 500 logos grid */
+.sp500-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffd840;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+.sp500-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 280px;
+}
+.sp500-logo-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  opacity: 0;
+  transform: scale(0.85);
+  animation: sp500TileIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes sp500TileIn {
+  to { opacity: 1; transform: scale(1); }
+}
+.sp500-logo-emoji { font-size: 28px; line-height: 1; }
+.sp500-logo-name  { font-size: 11px; color: #fff8ed; font-weight: 700; }
+.sp500-and-more {
+  color: rgba(255, 220, 160, 0.7);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Graph (4.2 + 4.3) */
+.sp500-graph-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+}
+.sp500-graph-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: sp500GraphDraw 1800ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+@keyframes sp500GraphDraw {
+  to { stroke-dashoffset: 0; }
+}
+.sp500-graph-stats {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff8ed;
+  font-variant-numeric: tabular-nums;
+}
+.sp500-stat-up   { color: #4ade80; }
+.sp500-stat-down { color: #ff5a4a; }
+
+/* 4.4 risk spectrum */
+.risk-spectrum-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 340px;
+}
+.risk-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: riskRowIn 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes riskRowIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.risk-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.risk-row-emoji { font-size: 22px; }
+.risk-row-label {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff8ed;
+}
+.risk-row-meter {
+  position: relative;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.risk-row-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  width: 0;
+  animation: riskMeterGrow 900ms cubic-bezier(0.16, 1, 0.3, 1) 300ms forwards;
+}
+@keyframes riskMeterGrow {
+  /* width comes from inline style; key off the fill value via animation. */
+  from { width: 0; }
+}
+.risk-row-meta {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 220, 160, 0.85);
+}
+.risk-row-use {
+  font-size: 12px;
+  color: #fff8ed;
+}
+.risk-row-use strong { color: #ffd840; font-weight: 900; }
+
+/* ============================================================
+ * Stage 5 — Provident fund / liquidity event / journey finale
+ * ============================================================ */
+
+/* 5.1 A — Provident comparison */
+.provident-compare-caption {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 220, 160, 0.85);
+  margin-bottom: -6px;
+}
+.provident-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.provident-compare-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 56px;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: providentRowIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes providentRowIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.provident-compare-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff8ed;
+}
+.provident-compare-bar {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+}
+.provident-compare-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  animation: providentBarGrow 900ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+@keyframes providentBarGrow {
+  to { width: var(--target-w, 50%); }
+}
+.provident-compare-value {
+  font-size: 14px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* 5.1 B — Lock */
+.provident-lock-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 0 6px;
+}
+.provident-lock-coin {
+  font-size: 40px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+}
+.provident-lock-icon {
+  font-size: 56px;
+  animation: providentLockBeat 1800ms ease-in-out infinite;
+  filter: drop-shadow(0 4px 10px rgba(167, 139, 250, 0.45));
+}
+@keyframes providentLockBeat {
+  0%, 100% { transform: scale(1);    }
+  50%      { transform: scale(1.08); }
+}
+.provident-lock-counter {
+  font-size: 18px;
+  font-weight: 900;
+  color: #a78bfa;
+  letter-spacing: 0.02em;
+}
+
+/* 5.1 C — Bonus animation (coins falling) */
+.provident-bonus-stage {
+  position: relative;
+  width: 240px;
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+.provident-bonus-coin {
+  position: absolute;
+  top: -20px;
+  font-size: 26px;
+  animation: providentCoinFall 2200ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.4));
+}
+.provident-bonus-coin.coin-a { left: 18%;  animation-delay:    0ms; }
+.provident-bonus-coin.coin-b { left: 36%;  animation-delay:  300ms; }
+.provident-bonus-coin.coin-c { left: 54%;  animation-delay:  600ms; }
+.provident-bonus-coin.coin-d { left: 72%;  animation-delay:  900ms; }
+.provident-bonus-coin.coin-e { left: 90%;  animation-delay: 1200ms; }
+@keyframes providentCoinFall {
+  0%   { transform: translateY(0)    rotate(0deg);   opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(140px) rotate(360deg); opacity: 0; }
+}
+.provident-bonus-base {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+.provident-bonus-jar {
+  font-size: 48px;
+  filter: drop-shadow(0 4px 8px rgba(255, 200, 64, 0.45));
+}
+.provident-bonus-label {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffd840;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 2px 12px;
+  border-radius: 999px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* 5.2 — Allocation toolbar (non-blocking sticky) */
+.allocation-toolbar {
+  position: fixed;
+  top: 76px; /* clears the floating ResourceBar header */
+  inset-inline: 12px;
+  z-index: 1030; /* below tutorial popups, above page content */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff7df 0%, #ffe9a0 100%);
+  color: #4a2900;
+  box-shadow:
+    0 4px 0 0 #b89060,
+    0 8px 18px rgba(0, 0, 0, 0.35);
+  border: 2px solid #b89060;
+  pointer-events: auto;
+  max-width: calc(100% - 24px);
+  margin: 0 auto;
+}
+.allocation-toolbar-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  flex: 1 1 auto;
+}
+.allocation-toolbar-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-variant-numeric: tabular-nums;
+}
+.allocation-toolbar-btn {
+  flex: 0 0 auto;
+  padding: 6px 14px !important;
+  font-size: 13px !important;
+}
+
+/* 5.3 — Three-instrument parallel growth */
+.three-growth {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+.three-growth-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 60px;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: providentRowIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.three-growth-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff8ed;
+}
+.three-growth-bar {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.three-growth-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  animation: providentBarGrow 1100ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+.three-growth-fill--bumpy {
+  /* subtle wave decoration to hint at volatility */
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.15) 6px,
+    rgba(255, 255, 255, 0) 12px
+  );
+  background-blend-mode: overlay;
+}
+.three-growth-fill--jump {
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.55) inset;
+}
+.three-growth-value {
+  font-size: 13px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* Camera event */
+.camera-event-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: tspeedFade 200ms ease-out;
+}
+.camera-event-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 18px;
+  background: linear-gradient(180deg, #fff7df 0%, #ffe9a0 100%);
+  border: 2px solid #b89060;
+  border-radius: 18px;
+  color: #4a2900;
+  box-shadow:
+    0 6px 0 0 #b89060,
+    0 12px 24px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.camera-event-emoji {
+  font-size: 48px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  animation: cameraShake 700ms ease-in-out;
+}
+@keyframes cameraShake {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-6deg); }
+  75%      { transform: rotate(6deg); }
+}
+.camera-event-text {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+.camera-event-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.camera-event-cost {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.camera-event-divider { color: #b89060; }
+.camera-event-liquid  { color: #4a2900; }
+.camera-event-timer   { color: #4a2900; font-variant-numeric: tabular-nums; }
+.camera-event-timer--urgent {
+  color: #b91c1c;
+  animation: cameraTimerPulse 600ms ease-in-out infinite alternate;
+}
+@keyframes cameraTimerPulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.1); }
+}
+.camera-event-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+.camera-event-pay {
+  padding: 8px 18px !important;
+  font-size: 14px !important;
+}
+.camera-event-ignore {
+  padding: 8px 14px;
+  border: 2px solid #b89060;
+  background: transparent;
+  color: #4a2900;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* Vacation-tile camera badge */
+.s5-camera-badge {
+  position: absolute;
+  top: -8px;
+  inset-inline-end: -8px;
+  z-index: 2;
+  font-size: 22px;
+  background: #fff8ed;
+  border-radius: 999px;
+  padding: 2px 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 2px solid #b89060;
+  animation: cameraBadgeIn 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.s5-camera-badge--broken { background: #ffe3e0; border-color: #ff5a4a; }
+.s5-camera-badge--fixed  { background: #defce8; border-color: #4ade80; }
+@keyframes cameraBadgeIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* 5.4 — Provident unlock */
+.provident-unlock-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.provident-unlock-lock {
+  font-size: 56px;
+  filter: drop-shadow(0 4px 10px rgba(167, 139, 250, 0.6));
+  animation: providentUnlockShake 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes providentUnlockShake {
+  0%   { transform: rotate(0)   scale(0.8); opacity: 0; }
+  50%  { transform: rotate(-8deg) scale(1.1); opacity: 1; }
+  100% { transform: rotate(0)   scale(1); opacity: 1; }
+}
+.provident-unlock-bal {
+  font-size: 26px;
+  font-weight: 900;
+  color: #a78bfa;
+  font-variant-numeric: tabular-nums;
+}
+.provident-unlock-bonus {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffd840;
+}
+
+/* 5.4 Screen B — Timeframe → tool */
+.timeframe-question {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffd840;
+  text-align: center;
+}
+.timeframe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.timeframe-row {
+  display: grid;
+  grid-template-columns: 90px 24px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: providentRowIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.timeframe-range {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #2a1500;
+  text-align: center;
+}
+.timeframe-arrow { color: #ffd840; font-weight: 900; }
+.timeframe-tool {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff8ed;
+}
+
+/* ============================================================
+ * Persistent Level Indicator (Option B — sticky strip under header)
+ * ============================================================ */
+.level-indicator {
+  position: sticky;
+  top: 76px; /* sits just below the floating ResourceBar */
+  z-index: 49; /* below header (z-50), above content */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 14px;
+  background: linear-gradient(90deg, #5b2f8a 0%, #6b3aa0 50%, #5b2f8a 100%);
+  color: #fff8ed;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid rgba(255, 216, 64, 0.35);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  margin-bottom: 6px;
+  user-select: none;
+}
+.level-indicator-label {
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  flex: 1 1 auto;
+  text-align: start;
+}
+.level-indicator-dots {
+  display: inline-flex;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.level-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 248, 237, 0.25);
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+.level-indicator-dot--on {
+  background: #ffd840;
+  box-shadow: 0 0 6px rgba(255, 216, 64, 0.7);
+}
+
+/* ============================================================
+ * Demo Mode chip (top-left, only on `?demo=stageN` sessions)
+ * ============================================================ */
+.demo-mode-chip {
+  position: fixed;
+  top: 10px;
+  inset-inline-start: 10px;
+  z-index: 1080;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #000 100%);
+  color: #ffd840;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 216, 64, 0.65);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  user-select: none;
+}
+.demo-mode-chip-icon { font-size: 13px; line-height: 1; }
+.demo-mode-chip-label { line-height: 1.1; }
+.demo-mode-chip-close {
+  border: none;
+  background: transparent;
+  color: rgba(255, 248, 237, 0.7);
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.demo-mode-chip-close:hover { color: #ff5a4a; }
+
+/* ============================================================
+ * Stage Opener — the polished stage-transition modal used at the
+ * start of every stage in the intro journey. Defines the visual
+ * ritual that ties the 5 stages into one coherent experience.
+ * Tokens used: --color-primary-*, --color-neutral-*, --radius-*, --shadow-*.
+ * ============================================================ */
+.stage-opener {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background: rgba(15, 9, 5, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: stageOpenerFade 240ms ease-out;
+}
+@keyframes stageOpenerFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.stage-opener-card {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(180deg, #fff8ee 0%, #f5e6c8 100%);
+  border: 2px solid #d4a96a;
+  border-radius: 24px;
+  padding: 22px 22px 20px;
+  box-shadow:
+    0 6px 0 0 #b89060,
+    0 18px 38px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  animation: stageOpenerRise 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes stageOpenerRise {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.stage-opener-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: linear-gradient(180deg, #ffd840 0%, #d98708 100%);
+  border: 1px solid #8a5500;
+  border-radius: 999px;
+  color: #4a2900;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow:
+    0 2px 0 0 #8a5500,
+    0 4px 8px rgba(0, 0, 0, 0.25);
+}
+.stage-opener-chip-mark {
+  font-size: 9px;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+.stage-opener-dots {
+  display: inline-flex;
+  gap: 4px;
+  margin-inline-start: 4px;
+}
+.stage-opener-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(74, 41, 0, 0.25);
+}
+.stage-opener-dot--on {
+  background: #4a2900;
+  box-shadow: 0 0 4px rgba(255, 248, 237, 0.85) inset;
+}
+
+.stage-opener-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff6e3 0%, #ffd98a 100%);
+  border: 2px solid #d98708;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  line-height: 1;
+  box-shadow:
+    0 4px 0 0 #b89060,
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.stage-opener-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #2a1508;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.stage-opener-body {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #4a2900;
+  margin: 0;
+  padding: 0 6px;
+}
+
+.stage-opener-cta {
+  margin-top: 4px;
+  padding: 12px 28px;
+  border: 2px solid #8a5500;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffd840 0%, #ffb23a 50%, #d98708 100%);
+  color: #2a1508;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow:
+    0 4px 0 0 #8a5500,
+    0 6px 14px rgba(217, 135, 8, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: transform 120ms ease-out, filter 120ms ease-out;
+}
+.stage-opener-cta:hover  { filter: brightness(1.08); }
+.stage-opener-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 0 #8a5500, 0 4px 8px rgba(217, 135, 8, 0.3); }
+.stage-opener-cta--locked {
+  opacity: 0.55;
+  cursor: wait;
+  filter: grayscale(0.3);
+}
+.stage-opener-cta--locked:hover { filter: grayscale(0.3); }
+.stage-opener-cta--locked:active { transform: none; }
+
+/* ============================================================
+ * Coin-split FX — fires once per sale during Stage 3.
+ * One central glyph splits into two: left half flies to wallet,
+ * right half flies to the deposit. Purely visual feedback.
+ * ============================================================ */
+.coin-split-fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1015;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.coin-split-fx-glyph {
+  position: absolute;
+  font-size: 32px;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  filter: drop-shadow(0 0 6px rgba(255, 216, 64, 0.6));
+}
+.coin-split-fx-glyph--left {
+  animation: coinSplitLeft 900ms cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+.coin-split-fx-glyph--right {
+  animation: coinSplitRight 900ms cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+@keyframes coinSplitLeft {
+  0%   { transform: translate(0, 0)        scale(0.6); opacity: 0; }
+  20%  { transform: translate(0, 0)        scale(1.2); opacity: 1; }
+  100% { transform: translate(-130px, -38vh) scale(0.6); opacity: 0; }
+}
+@keyframes coinSplitRight {
+  0%   { transform: translate(0, 0)        scale(0.6); opacity: 0; }
+  20%  { transform: translate(0, 0)        scale(1.2); opacity: 1; }
+  100% { transform: translate(130px, -38vh) scale(0.6); opacity: 0; }
+}
+
+/* ============================================================
+ * Stage 3 weekly-savings graph (bar chart, 12 columns).
+ * ============================================================ */
+.weekly-savings-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+.weekly-savings-bar {
+  transform-origin: bottom center;
+  transform: scaleY(0);
+  animation: weeklySavingsBarRise 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes weeklySavingsBarRise {
+  to { transform: scaleY(1); }
+}
+.weekly-savings-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff8ed;
+  font-size: 12px;
+  font-weight: 800;
+}
+.weekly-savings-bullet {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+/* ============================================================
+ * Standing-order row — shown in Finance Center while Stage 3 is active.
+ * Sits under the deposit account card as a quiet status pill.
+ * ============================================================ */
+.standing-order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 12px 0;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #5b2f8a 0%, #3d1d63 100%);
+  color: #fff8ed;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid rgba(255, 216, 64, 0.45);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+.standing-order-row-left {
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.standing-order-row-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.standing-order-row-meta {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #ffd840;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Allocation-toolbar hint shown while the multi-instrument gate is unmet. */
+.allocation-toolbar-hint {
+  font-size: 11px;
+  color: #d98708;
+  font-weight: 800;
+  width: 100%;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Stage 5 three-instrument line graph */
+.three-growth-svg {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+.three-growth-line {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: threeGrowthDraw 1400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.three-growth-line--a { animation-delay: 100ms; }
+.three-growth-line--b { animation-delay: 500ms; }
+.three-growth-line--c { animation-delay: 900ms; }
+@keyframes threeGrowthDraw {
+  to { stroke-dashoffset: 0; }
+}
+.three-growth-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: #fff8ed;
+  font-size: 12px;
+  font-weight: 700;
+}
+.three-growth-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Stage 2 polished basket — labelled shopping list visualisation. */
+.basket-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+}
+.basket-grid-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  animation: providentRowIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.basket-grid-year {
+  font-size: 12px;
+  font-weight: 900;
+  color: #8a5500;
+  letter-spacing: 0.04em;
+}
+.basket-grid-price {
+  font-size: 14px;
+  font-weight: 900;
+  color: #2a1508;
+  font-variant-numeric: tabular-nums;
+}
+.basket-grid-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px solid #d4a96a;
+  border-radius: 12px;
+  padding: 8px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.basket-grid-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  border-radius: 6px;
+  background: rgba(255, 216, 138, 0.45);
+  font-size: 11px;
+  color: #2a1508;
+  font-weight: 700;
+}
+.basket-grid-row--ghost {
+  background: rgba(196, 52, 28, 0.08);
+  color: rgba(196, 52, 28, 0.55);
+  text-decoration: line-through;
+  text-decoration-color: rgba(196, 52, 28, 0.6);
+  text-decoration-thickness: 1.5px;
+}
+.basket-grid-row-emoji { font-size: 14px; line-height: 1; filter: grayscale(0); }
+.basket-grid-row--ghost .basket-grid-row-emoji { filter: grayscale(0.7); opacity: 0.55; }
+.basket-grid-row-label { line-height: 1; }
+.basket-grid-count {
+  font-size: 11px;
+  color: #4a2900;
+  font-weight: 800;
+}
+/* "אבדו N פריטים" red badge under shrunken baskets. */
+.basket-grid-lost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 900;
+  color: #c4341c;
+  background: rgba(196, 52, 28, 0.1);
+  border: 1px solid rgba(196, 52, 28, 0.35);
+  border-radius: 999px;
+  padding: 2px 7px;
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+
+
+
+
+
+

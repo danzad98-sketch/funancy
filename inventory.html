@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<title>Funancy — Visual Asset Inventory</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg: #fff8ee;
+    --panel: #ffffff;
+    --border: #d4a96a;
+    --text: #2a1508;
+    --muted: #7a4a1e;
+    --accent: #d98708;
+    --accent-bg: #fff6e3;
+    --warn: #d97706;
+    --warn-bg: #fff4d6;
+    --err: #b91c1c;
+    --err-bg: #ffe0dc;
+    --ok: #2e7d32;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, Arial, 'Heebo', sans-serif; }
+  header {
+    padding: 24px 32px 16px;
+    border-bottom: 3px solid var(--border);
+    background: linear-gradient(180deg, #fff6e3, #fce8c4);
+    position: sticky; top: 0; z-index: 10;
+  }
+  h1 { margin: 0 0 4px; font-size: 28px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  input[type="search"] {
+    flex: 1; min-width: 220px;
+    padding: 10px 14px; border: 2px solid var(--border); border-radius: 12px;
+    font-size: 14px; background: var(--panel);
+  }
+  select {
+    padding: 10px 12px; border: 2px solid var(--border); border-radius: 12px;
+    font-size: 14px; background: var(--panel); cursor: pointer;
+  }
+  .stats {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .stat { background: var(--panel); border: 2px solid var(--border); border-radius: 10px; padding: 6px 12px; font-size: 13px; }
+  .stat strong { color: var(--accent); font-size: 16px; }
+  main { padding: 16px 32px 64px; max-width: 1400px; margin: 0 auto; }
+  details {
+    background: var(--panel); border: 2px solid var(--border); border-radius: 14px;
+    margin-bottom: 16px; overflow: hidden;
+  }
+  details[open] { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  summary {
+    list-style: none; cursor: pointer;
+    padding: 14px 18px; font-size: 18px; font-weight: 800;
+    background: linear-gradient(180deg, #fff6e3, #ffe6bf);
+    border-bottom: 2px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary .count {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    background: var(--bg); padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    text-align: left; padding: 10px 12px; background: #fff4d8;
+    border-bottom: 2px solid var(--border); font-weight: 700;
+    position: sticky; top: 0;
+  }
+  tbody td {
+    padding: 10px 12px; border-bottom: 1px solid #f0d89a;
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #fffaf0; }
+  .icon-cell { font-size: 28px; text-align: center; min-width: 48px; }
+  .icon-cell.svg { font-size: 11px; color: var(--muted); font-style: italic; }
+  .he { direction: rtl; text-align: right; font-weight: 600; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; margin-right: 4px;
+  }
+  .badge.dup { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
+  .badge.missing { background: var(--err-bg); color: var(--err); border: 1px solid var(--err); }
+  .badge.ok { background: #e8f6ea; color: var(--ok); border: 1px solid var(--ok); }
+  .note { color: var(--muted); font-size: 12px; }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .legend .badge { font-size: 12px; }
+  .filter-tag {
+    background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent);
+    padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  tr.hidden { display: none; }
+  .empty-state {
+    padding: 24px; text-align: center; color: var(--muted); font-style: italic;
+  }
+  .legacy { opacity: 0.7; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Funancy — Visual Asset Inventory</h1>
+  <div class="subtitle">Every emoji, icon, and visual asset used in the game. Hand off to design.</div>
+
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search by name (Hebrew or English)…" />
+    <select id="featureFilter">
+      <option value="">All features</option>
+      <option>Working Board</option>
+      <option>Sell Area</option>
+      <option>Finance Center</option>
+      <option>Meta Goal</option>
+      <option>Navigation / UI</option>
+    </select>
+    <select id="flagFilter">
+      <option value="">All items</option>
+      <option value="dup">⚠️ Duplicates only</option>
+      <option value="missing">❌ Missing only</option>
+    </select>
+  </div>
+
+  <div class="stats">
+    <span class="stat">Total items: <strong id="totalCount">0</strong></span>
+    <span class="stat">Showing: <strong id="visibleCount">0</strong></span>
+    <span class="stat">⚠️ Duplicates: <strong id="dupCount">0</strong></span>
+    <span class="stat">❌ Missing: <strong id="missingCount">0</strong></span>
+  </div>
+
+  <div class="legend">
+    <span class="badge ok">✓ unique</span>
+    <span class="badge dup">⚠️ shares glyph with another item</span>
+    <span class="badge missing">❌ no icon defined in code</span>
+  </div>
+</header>
+
+<main id="root">
+
+<!-- =============================================================
+     WORKING BOARD
+     ============================================================= -->
+<details open data-feature="Working Board">
+  <summary>🛒 Working Board <span class="count" data-count></span></summary>
+  <table>
+    <thead><tr>
+      <th>Category</th><th>Item (Hebrew)</th><th>Item (English)</th><th>Tier / Level</th><th>Icon</th><th>Source</th><th>Notes</th>
+    </tr></thead>
+    <tbody>
+
+      <!-- Producers -->
+      <tr data-feature="Working Board" data-cat="Producers" data-name="מסעדת סושי sushi takeout box producer">
+        <td>Producers</td><td class="he">מסעדת סושי</td><td>Sushi Restaurant (producer)</td><td>—</td>
+        <td class="icon-cell">🥡</td><td class="note">data/producers.ts</td>
+        <td><span class="badge ok">✓</span> Spawns Sushi L1</td>
+      </tr>
+      <tr data-feature="Working Board" data-cat="Producers" data-name="מטבח המבורגרים burger kitchen">
+        <td>Producers</td><td class="he">מטבח המבורגרים</td><td>Burger Kitchen (producer)</td><td>—</td>
+        <td class="icon-cell">🍳</td><td class="note">data/producers.ts</td>
+        <td><span class="badge ok">✓</span> Spawns Burger L1. Note: ProducerArea.tsx overrides with custom SVG (stove)</td>
+      </tr>
+      <tr data-feature="Working Board" data-cat="Producers" data-name="סטודיו אמנות art studio">
+        <td>Producers</td><td class="he">סטודיו אמנות</td><td>Art Studio (producer)</td><td>—</td>
+        <td class="icon-cell">🖊️</td><td class="note">data/producers.ts</td>
+        <td><span class="badge ok">✓</span> Spawns Art L1. Note: ProducerArea.tsx overrides with custom SVG (paintbrush)</td>
+      </tr>
+
+      <!-- Sushi chain -->
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="אורז rice"><td>Sushi chain</td><td class="he">אורז</td><td>Rice</td><td>L1</td><td class="icon-cell">🍚</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="אונגירי onigiri"><td>Sushi chain</td><td class="he">אונגירי</td><td>Onigiri</td><td>L2</td><td class="icon-cell">🍙</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="סושי sushi"><td>Sushi chain</td><td class="he">סושי</td><td>Sushi</td><td>L3</td><td class="icon-cell">🍣</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="מגש סושי sushi tray bento"><td>Sushi chain</td><td class="he">מגש סושי</td><td>Sushi Tray (Bento)</td><td>L4</td><td class="icon-cell">🍱</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="דוכן ראמן ramen stand lantern"><td>Sushi chain</td><td class="he">דוכן ראמן</td><td>Ramen Stand</td><td>L5</td><td class="icon-cell">🏮</td><td class="note">itemChains.ts</td><td><span class="badge dup">⚠️</span> Lantern emoji is also used decoratively as the hanging lantern (CSS .lantern), but those are styled, not emoji-driven</td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="מסעדת ראמן ramen restaurant"><td>Sushi chain</td><td class="he">מסעדת ראמן</td><td>Ramen Restaurant</td><td>L6</td><td class="icon-cell">🍜</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="מסעדת שף chef restaurant castle"><td>Sushi chain</td><td class="he">מסעדת שף</td><td>Chef Restaurant</td><td>L7</td><td class="icon-cell">🏯</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span> Japanese castle</td></tr>
+      <tr data-feature="Working Board" data-cat="Sushi" data-name="אימפריית סושי sushi empire dragon"><td>Sushi chain</td><td class="he">אימפריית סושי</td><td>Sushi Empire</td><td>L8 (trophy)</td><td class="icon-cell">🐉</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span> Renders with item-trophy glow animation</td></tr>
+
+      <!-- Burger chain -->
+      <tr data-feature="Working Board" data-cat="Burger" data-name="קציצה patty meat"><td>Burger chain</td><td class="he">קציצה</td><td>Patty</td><td>L1</td><td class="icon-cell">🥩</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span> Cut of meat emoji</td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="המבורגר hamburger"><td>Burger chain</td><td class="he">המבורגר</td><td>Hamburger</td><td>L2</td><td class="icon-cell">🍔</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="ארוחה מהירה fast food hot dog"><td>Burger chain</td><td class="he">ארוחה מהירה</td><td>Fast Food</td><td>L3</td><td class="icon-cell">🌭</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span> Hot dog represents fast food</td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="ארוחת קומבו fries combo meal"><td>Burger chain</td><td class="he">ארוחת קומבו</td><td>Combo Meal</td><td>L4</td><td class="icon-cell">🍟</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="דוכן אוכל food stall cart"><td>Burger chain</td><td class="he">דוכן אוכל</td><td>Food Stall</td><td>L5</td><td class="icon-cell">🛒</td><td class="note">itemChains.ts</td><td><span class="badge dup">⚠️</span> Shopping cart emoji used as "food stall" — semantically off; consider 🍱 stand or 🥘</td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="מזנון convenience store"><td>Burger chain</td><td class="he">מזנון</td><td>Convenience / Diner</td><td>L6</td><td class="icon-cell">🏪</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="מסעדת גורמה gourmet restaurant fork knife plate"><td>Burger chain</td><td class="he">מסעדת גורמה</td><td>Gourmet Restaurant</td><td>L7</td><td class="icon-cell">🍽️</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Burger" data-name="רשת מסעדות restaurant chain trophy"><td>Burger chain</td><td class="he">רשת מסעדות</td><td>Restaurant Chain</td><td>L8 (trophy)</td><td class="icon-cell">🏆</td><td class="note">itemChains.ts</td><td><span class="badge dup">⚠️</span> Same trophy used in MetaStageBlock for "stage completed" and in GameCompleteBanner</td></tr>
+
+      <!-- Art chain -->
+      <tr data-feature="Working Board" data-cat="Art" data-name="עיפרון pencil"><td>Art chain</td><td class="he">עיפרון</td><td>Pencil</td><td>L1</td><td class="icon-cell">✏️</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="מכחול paintbrush"><td>Art chain</td><td class="he">מכחול</td><td>Paintbrush</td><td>L2</td><td class="icon-cell">🖌️</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="ציור painting palette"><td>Art chain</td><td class="he">ציור</td><td>Painting (palette)</td><td>L3</td><td class="icon-cell">🎨</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="ציור ממוסגר framed picture"><td>Art chain</td><td class="he">ציור ממוסגר</td><td>Framed Painting</td><td>L4</td><td class="icon-cell">🖼️</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="תערוכה exhibition classical building"><td>Art chain</td><td class="he">תערוכה</td><td>Exhibition</td><td>L5</td><td class="icon-cell">🏛️</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span></td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="גלריה gallery masks theatre"><td>Art chain</td><td class="he">גלריה</td><td>Gallery</td><td>L6</td><td class="icon-cell">🎭</td><td class="note">itemChains.ts</td><td><span class="badge dup">⚠️</span> Performing-arts masks used to mean "gallery" — semantically off; consider 🖼️+frame or 🏛️ variant</td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="מוזיאון museum castle"><td>Art chain</td><td class="he">מוזיאון</td><td>Museum</td><td>L7</td><td class="icon-cell">🏰</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span> Castle as museum stand-in</td></tr>
+      <tr data-feature="Working Board" data-cat="Art" data-name="אימפריית אומנות art empire diamond gem"><td>Art chain</td><td class="he">אימפריית אומנות</td><td>Art Empire</td><td>L8 (trophy)</td><td class="icon-cell">💎</td><td class="note">itemChains.ts</td><td><span class="badge ok">✓</span> Renders with item-trophy glow</td></tr>
+
+      <!-- Customers -->
+      <tr data-feature="Working Board" data-cat="Customers" data-name="דני man"><td>Customers (random pool)</td><td class="he">דני</td><td>Danny</td><td>—</td><td class="icon-cell">👨</td><td class="note">data/orders.ts CHARACTERS</td><td>Used by sell-request engine; OrderGallery overrides with ChefA/B SVG</td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="מיכל woman"><td>Customers (random pool)</td><td class="he">מיכל</td><td>Michal</td><td>—</td><td class="icon-cell">👩</td><td class="note">data/orders.ts</td><td>see above</td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="שמעון elderly man"><td>Customers (random pool)</td><td class="he">שמעון</td><td>Shimon</td><td>—</td><td class="icon-cell">👴</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="נועה princess"><td>Customers (random pool)</td><td class="he">נועה</td><td>Noa</td><td>—</td><td class="icon-cell">👸</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="אורי prince"><td>Customers (random pool)</td><td class="he">אורי</td><td>Uri</td><td>—</td><td class="icon-cell">🤴</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="יוסי police officer"><td>Customers (random pool)</td><td class="he">יוסי</td><td>Yossi</td><td>—</td><td class="icon-cell">👮</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="רון cook chef"><td>Customers (random pool)</td><td class="he">רון</td><td>Ron</td><td>—</td><td class="icon-cell">👨‍🍳</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="דנה office worker"><td>Customers (random pool)</td><td class="he">דנה</td><td>Dana</td><td>—</td><td class="icon-cell">👩‍💼</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="אבי bearded man"><td>Customers (random pool)</td><td class="he">אבי</td><td>Avi</td><td>—</td><td class="icon-cell">🧔</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="רחל scientist"><td>Customers (random pool)</td><td class="he">רחל</td><td>Rachel</td><td>—</td><td class="icon-cell">👩‍🔬</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="שרה artist"><td>Customers (random pool)</td><td class="he">שרה</td><td>Sara</td><td>—</td><td class="icon-cell">👩‍🎨</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="עמית office worker"><td>Customers (random pool)</td><td class="he">עמית</td><td>Amit</td><td>—</td><td class="icon-cell">🧑‍💼</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="גיל student graduate"><td>Customers (random pool)</td><td class="he">גיל</td><td>Gil</td><td>—</td><td class="icon-cell">👨‍🎓</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="תמר teacher"><td>Customers (random pool)</td><td class="he">תמר</td><td>Tamar</td><td>—</td><td class="icon-cell">👩‍🏫</td><td class="note">data/orders.ts</td><td></td></tr>
+      <tr data-feature="Working Board" data-cat="Customers" data-name="יעקב elderly"><td>Customers (random pool)</td><td class="he">יעקב</td><td>Yaakov</td><td>—</td><td class="icon-cell">🧓</td><td class="note">data/orders.ts</td><td></td></tr>
+
+      <!-- Empty-board hint -->
+      <tr data-feature="Working Board" data-cat="UI hints" data-name="empty board hint pointing finger">
+        <td>UI hint</td><td class="he">לחץ על יצרן כדי להתחיל!</td><td>Empty-board hint</td><td>—</td>
+        <td class="icon-cell">👇</td><td class="note">MergeGrid.tsx</td>
+        <td><span class="badge ok">✓</span> Pulses while board is empty</td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+
+<!-- =============================================================
+     SELL AREA / REWARDS
+     ============================================================= -->
+<details open data-feature="Sell Area">
+  <summary>💰 Sell Area &amp; Rewards <span class="count" data-count></span></summary>
+  <table>
+    <thead><tr>
+      <th>Category</th><th>Item (Hebrew)</th><th>Item (English)</th><th>Tier / Level</th><th>Icon</th><th>Source</th><th>Notes</th>
+    </tr></thead>
+    <tbody>
+      <tr data-feature="Sell Area" data-cat="Reward" data-name="מטבעות coins gold coin">
+        <td>Reward type</td><td class="he">מטבעות</td><td>Coins</td><td>—</td>
+        <td class="icon-cell">🪙</td><td class="note">data/orders.ts REWARD_EMOJIS</td>
+        <td><span class="badge dup">⚠️</span> Two different "coin" glyphs in use: 🪙 (rewards, inflation animation) vs ⭐ (header, prices). Pick one.</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Reward" data-name="מאיץ זמן time booster speeder">
+        <td>Reward type</td><td class="he">מאיץ זמן</td><td>Time Booster</td><td>—</td>
+        <td class="icon-cell">⏩</td><td class="note">data/orders.ts</td>
+        <td><span class="badge dup">⚠️</span> The Time-Speeder button itself uses ⏳ hourglass; the resource-bar pill uses ⌛ (different hourglass); the reward uses ⏩ fast-forward — three different glyphs for the same concept.</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Reward" data-name="אנרגיה energy bolt">
+        <td>Reward type</td><td class="he">אנרגיה</td><td>Energy</td><td>—</td>
+        <td class="icon-cell">⚡</td><td class="note">data/orders.ts</td>
+        <td><span class="badge ok">✓</span> Same glyph as ResourceBar energy pill — consistent</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Reward" data-name="תיבת הפתעה mystery box gift">
+        <td>Reward type</td><td class="he">תיבת הפתעה</td><td>Mystery Box</td><td>—</td>
+        <td class="icon-cell">🎁</td><td class="note">data/orders.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Reward" data-name="מאיץ מיזוג merge booster crystal">
+        <td>Reward type</td><td class="he">מאיץ מיזוג</td><td>Merge Booster</td><td>—</td>
+        <td class="icon-cell">🔮</td><td class="note">data/orders.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Request type" data-name="פריט בודד single item">
+        <td>Request type tag</td><td class="he">פריט בודד</td><td>Single Item</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">OrderGallery RequestTypeTag</td>
+        <td><span class="badge missing">❌</span> Text-only pill, no icon. Designer should pick one.</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Request type" data-name="עסקת זוג duo deal">
+        <td>Request type tag</td><td class="he">עסקת זוג</td><td>Duo Deal</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">OrderGallery</td>
+        <td><span class="badge missing">❌</span> Text-only pill, no icon.</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Request type" data-name="סט קטגוריה category set">
+        <td>Request type tag</td><td class="he">סט קטגוריה</td><td>Category Set</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">OrderGallery</td>
+        <td><span class="badge missing">❌</span> Text-only pill, no icon.</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Stall furniture" data-name="cash register">
+        <td>Stall furniture</td><td class="he">קופה רושמת</td><td>Cash Register</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">OrderGallery CashRegister()</td>
+        <td><span class="badge ok">✓</span> Inline custom SVG, not emoji</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Stall furniture" data-name="awning red white stripes">
+        <td>Stall furniture</td><td class="he">סוכך</td><td>Scalloped Awning</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">globals.css .awning-scalloped</td>
+        <td><span class="badge ok">✓</span> Pure CSS</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Stall furniture" data-name="lantern paper hanging glow">
+        <td>Stall furniture</td><td class="he">פנס</td><td>Hanging Lantern (decorative)</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">globals.css .lantern</td>
+        <td><span class="badge ok">✓</span> 2 instances flank the awning, glow animated</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Chefs" data-name="chef A blonde male">
+        <td>Chef sprite</td><td class="he">שף בלונדיני</td><td>Chef A (blonde male)</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">OrderGallery ChefA()</td>
+        <td><span class="badge ok">✓</span> Inline SVG</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="Chefs" data-name="chef B dark skin female cap">
+        <td>Chef sprite</td><td class="he">שפית כובע</td><td>Chef B (capped)</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">OrderGallery ChefB()</td>
+        <td><span class="badge ok">✓</span> Inline SVG</td>
+      </tr>
+      <tr data-feature="Sell Area" data-cat="UI" data-name="missing items magnifier">
+        <td>UI hint</td><td class="he">חסרים פריטים</td><td>“Missing items” hint</td><td>—</td>
+        <td class="icon-cell">🔍</td><td class="note">OrderGallery</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+
+<!-- =============================================================
+     FINANCE CENTER
+     ============================================================= -->
+<details open data-feature="Finance Center">
+  <summary>🏛️ Finance Center <span class="count" data-count></span></summary>
+  <table>
+    <thead><tr>
+      <th>Category</th><th>Item (Hebrew)</th><th>Item (English)</th><th>Tier / Level</th><th>Icon</th><th>Source</th><th>Notes</th>
+    </tr></thead>
+    <tbody>
+
+      <!-- Accounts -->
+      <tr data-feature="Finance Center" data-cat="Accounts" data-name="חשבון בנק checking account">
+        <td>Account</td><td class="he">חשבון בנק</td><td>Checking Account</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/accounts.ts</td>
+        <td><span class="badge missing">❌</span> No icon defined per account. AccountBreakdown shows 🏦 next to "bank balance" overall, but each account card is text-only.</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Accounts" data-name="פקדון בנקאי bank deposit">
+        <td>Account</td><td class="he">פקדון בנקאי</td><td>Bank Deposit</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/accounts.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Accounts" data-name="קרן כספית index fund money market">
+        <td>Account</td><td class="he">קרן כספית</td><td>Money-Market Fund</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/accounts.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Accounts" data-name="מניה בודדת single stock">
+        <td>Account</td><td class="he">מניה בודדת</td><td>Single Stock</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/accounts.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Accounts" data-name="קרן פנסיה pension fund">
+        <td>Account</td><td class="he">קרן פנסיה</td><td>Pension Fund</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/accounts.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Accounts" data-name="קופת גמל provident fund">
+        <td>Account</td><td class="he">קופת גמל</td><td>Provident Fund</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/accounts.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+
+      <!-- Account Breakdown dashboard -->
+      <tr data-feature="Finance Center" data-cat="Dashboard" data-name="bank balance icon">
+        <td>Dashboard</td><td class="he">יתרת חשבון</td><td>Bank Balance label</td><td>—</td>
+        <td class="icon-cell">🏦</td><td class="note">AccountBreakdown.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Dashboard" data-name="investments chart up">
+        <td>Dashboard</td><td class="he">השקעות</td><td>Investments label</td><td>—</td>
+        <td class="icon-cell">📈</td><td class="note">AccountBreakdown.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Dashboard" data-name="protected from inflation shield">
+        <td>Dashboard</td><td class="he">מוגן מאינפלציה</td><td>"Protected from inflation"</td><td>—</td>
+        <td class="icon-cell">🛡️</td><td class="note">AccountBreakdown.tsx + InflationNotification</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Dashboard" data-name="losing value warning">
+        <td>Dashboard</td><td class="he">מאבד ערך לאינפלציה</td><td>"Losing value" warning</td><td>—</td>
+        <td class="icon-cell">⚠️</td><td class="note">AccountBreakdown.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+
+      <!-- Inflation -->
+      <tr data-feature="Finance Center" data-cat="Inflation" data-name="inflation chart down">
+        <td>Inflation event</td><td class="he">אינפלציה</td><td>Inflation hit</td><td>—</td>
+        <td class="icon-cell">📉</td><td class="note">InflationNotification.tsx</td>
+        <td><span class="badge ok">✓</span> Shakes via .inflation-icon animation</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Inflation" data-name="floating coins lost">
+        <td>Inflation event</td><td class="he">מטבעות מתעופפים</td><td>Floating coins (lost)</td><td>—</td>
+        <td class="icon-cell">🪙</td><td class="note">InflationNotification.tsx (×3 anims)</td>
+        <td><span class="badge dup">⚠️</span> Same glyph as the Coins reward — see Sell Area.</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Inflation" data-name="protected sparkles">
+        <td>Inflation event</td><td class="he">הכסף שלך מוגן</td><td>"Money protected" sparkle</td><td>—</td>
+        <td class="icon-cell">✨</td><td class="note">InflationNotification.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Inflation" data-name="tip lightbulb">
+        <td>Inflation tip</td><td class="he">הפקד כסף בפקדון</td><td>"Deposit tip"</td><td>—</td>
+        <td class="icon-cell">💡</td><td class="note">InflationNotification.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+
+      <!-- Time Speeder -->
+      <tr data-feature="Finance Center" data-cat="Time" data-name="year calendar">
+        <td>Time Speeder</td><td class="he">שנה</td><td>Game year label</td><td>—</td>
+        <td class="icon-cell">📅</td><td class="note">TimeSpeederButton.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Time" data-name="time speeder hourglass big">
+        <td>Time Speeder</td><td class="he">מאיץ זמן</td><td>Time Speeder button</td><td>—</td>
+        <td class="icon-cell">⏳</td><td class="note">TimeSpeederButton.tsx</td>
+        <td><span class="badge dup">⚠️</span> Resource bar uses ⌛, reward uses ⏩, this uses ⏳ — three glyphs for the same concept.</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Time" data-name="year passed">
+        <td>Time Speeder</td><td class="he">עברה שנה!</td><td>"A year passed!"</td><td>—</td>
+        <td class="icon-cell">📅</td><td class="note">TimeSpeederButton.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same calendar reused</td>
+      </tr>
+
+      <!-- Mission Card -->
+      <tr data-feature="Finance Center" data-cat="Missions" data-name="mission 1 first deposit">
+        <td>Mission</td><td class="he">פתח פיקדון ראשון</td><td>Open First Deposit (Stage 1)</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/missions.ts</td>
+        <td><span class="badge missing">❌</span> No icon defined per mission</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Missions" data-name="mission 2 use speeder">
+        <td>Mission</td><td class="he">השתמש במאיץ זמן</td><td>Use Time Speeder (Stage 2)</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/missions.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Missions" data-name="mission 3 deposit profit">
+        <td>Mission</td><td class="he">הרוויח 5 מטבעות</td><td>Earn Profit (Stage 3)</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/missions.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Missions" data-name="mission 4 sell tier 3 plus">
+        <td>Mission</td><td class="he">מכור מוצר בדרגה 3+</td><td>Sell Tier 3+ (Stage 4)</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/missions.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="Missions" data-name="mission 5 diversify">
+        <td>Mission</td><td class="he">פזר את ההשקעות</td><td>Diversify (Stage 5)</td><td>—</td>
+        <td class="icon-cell">—</td><td class="note">data/missions.ts</td>
+        <td><span class="badge missing">❌</span> No icon</td>
+      </tr>
+
+      <!-- Account Card change indicators -->
+      <tr data-feature="Finance Center" data-cat="UI" data-name="profit up arrow">
+        <td>UI indicator</td><td class="he">רווח</td><td>Profit arrow</td><td>—</td>
+        <td class="icon-cell">↑+</td><td class="note">AccountCard.tsx</td>
+        <td><span class="badge ok">✓</span> Used as text glyph</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="UI" data-name="loss down arrow">
+        <td>UI indicator</td><td class="he">הפסד</td><td>Loss arrow</td><td>—</td>
+        <td class="icon-cell">↓</td><td class="note">AccountCard.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="UI" data-name="locked pension">
+        <td>UI indicator</td><td class="he">נעול</td><td>Locked pension</td><td>—</td>
+        <td class="icon-cell">🔒</td><td class="note">AccountCardExpanded.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same lock used for Meta Goal locked stages and locked items</td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="UI" data-name="close x">
+        <td>UI control</td><td class="he">סגור</td><td>Close button</td><td>—</td>
+        <td class="icon-cell">✕</td><td class="note">AccountCardExpanded.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Finance Center" data-cat="UI" data-name="expand triangle">
+        <td>UI control</td><td class="he">הצג השקעות</td><td>Expand triangle</td><td>—</td>
+        <td class="icon-cell">▼</td><td class="note">AccountBreakdown.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+
+<!-- =============================================================
+     META GOAL
+     ============================================================= -->
+<details open data-feature="Meta Goal">
+  <summary>🎯 Meta Goal <span class="count" data-count></span></summary>
+  <table>
+    <thead><tr>
+      <th>Category</th><th>Item (Hebrew)</th><th>Item (English)</th><th>Tier / Level</th><th>Icon</th><th>Source</th><th>Notes</th>
+    </tr></thead>
+    <tbody>
+
+      <!-- Stage 1: Personal tech -->
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="stage 1 emoji personal tech smartphone">
+        <td>Stage header</td><td class="he">טכנולוגיה אישית</td><td>Stage 1 — Personal Tech</td><td>—</td>
+        <td class="icon-cell">📱</td><td class="note">metaGoals.ts createInitialMetaStages</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as the Stage-1 Phone L1 item below.</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="phone basic keypad telephone">
+        <td>Phone chain</td><td class="he">טלפון מקשים</td><td>Basic Phone</td><td>L1 (base)</td>
+        <td class="icon-cell">📞</td><td class="note">metaGoals.ts STAGE_1_ITEMS</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="phone smartphone upgraded">
+        <td>Phone chain</td><td class="he">סמארטפון</td><td>Smartphone</td><td>L2 (upgrade)</td>
+        <td class="icon-cell">📱</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge dup">⚠️</span> Reused as Stage-1 stage emoji</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="watch basic clock">
+        <td>Watch chain</td><td class="he">שעון רגיל</td><td>Basic Watch</td><td>L1 (base)</td>
+        <td class="icon-cell">🕐</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge ok">✓</span> Clock face emoji</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="watch smart watch">
+        <td>Watch chain</td><td class="he">שעון חכם</td><td>Smart Watch</td><td>L2 (upgrade)</td>
+        <td class="icon-cell">⌚</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="earbuds wired notes music">
+        <td>Earbuds chain</td><td class="he">אוזניות חוטיות</td><td>Wired Earbuds</td><td>L1 (base)</td>
+        <td class="icon-cell">🎵</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge dup">⚠️</span> "Musical note" used as wired earbuds — semantically off; consider 🎙️ or a custom SVG.</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 1" data-name="earbuds bluetooth headphones">
+        <td>Earbuds chain</td><td class="he">אוזניות בלוטוס</td><td>Bluetooth Earbuds</td><td>L2 (upgrade)</td>
+        <td class="icon-cell">🎧</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+
+      <!-- Stage 2: Independence -->
+      <tr data-feature="Meta Goal" data-cat="Stage 2" data-name="stage 2 emoji independence graduation">
+        <td>Stage header</td><td class="he">עצמאות</td><td>Stage 2 — Independence</td><td>—</td>
+        <td class="icon-cell">🎓</td><td class="note">metaGoals.ts createInitialMetaStages</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as the Stage-2 Studies item below.</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 2" data-name="computer desktop">
+        <td>Computer chain</td><td class="he">מחשב נייח</td><td>Desktop Computer</td><td>L1 (base)</td>
+        <td class="icon-cell">🖥️</td><td class="note">metaGoals.ts STAGE_2_ITEMS</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 2" data-name="computer laptop">
+        <td>Computer chain</td><td class="he">מחשב נייד</td><td>Laptop Computer</td><td>L2 (upgrade)</td>
+        <td class="icon-cell">💻</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 2" data-name="car used old">
+        <td>Car chain</td><td class="he">רכב ישן</td><td>Used Car</td><td>L1 (base)</td>
+        <td class="icon-cell">🚗</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as legacy LIFE_GOALS "Used Car" entry (still in store for persist compat).</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 2" data-name="car new suv">
+        <td>Car chain</td><td class="he">רכב חדש</td><td>New Car</td><td>L2 (upgrade)</td>
+        <td class="icon-cell">🚙</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as legacy LIFE_GOALS "New Car"</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 2" data-name="studies graduation cap">
+        <td>Studies (one-shot)</td><td class="he">לימודים</td><td>Studies / Higher Ed</td><td>L1 (single tier)</td>
+        <td class="icon-cell">🎓</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge dup">⚠️</span> Reused as Stage-2 stage emoji</td>
+      </tr>
+
+      <!-- Stage 3: Housing & life upgrade -->
+      <tr data-feature="Meta Goal" data-cat="Stage 3" data-name="stage 3 emoji housing house">
+        <td>Stage header</td><td class="he">דיור ושדרוג חיים</td><td>Stage 3 — Housing &amp; Life Upgrade</td><td>—</td>
+        <td class="icon-cell">🏡</td><td class="note">metaGoals.ts createInitialMetaStages</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as Stage-3 Housing L3 below AND legacy LIFE_GOALS "Dream Home" AND GameCompleteBanner closing line.</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 3" data-name="housing rent old">
+        <td>Housing chain</td><td class="he">שכירות</td><td>Rental</td><td>L1 (base)</td>
+        <td class="icon-cell">🏚️</td><td class="note">metaGoals.ts STAGE_3_ITEMS</td>
+        <td><span class="badge ok">✓</span> Run-down house emoji for rental</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 3" data-name="housing apartment building">
+        <td>Housing chain</td><td class="he">דירה בבניין מגורים</td><td>Apartment in Building</td><td>L2</td>
+        <td class="icon-cell">🏢</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 3" data-name="housing standalone house dream home">
+        <td>Housing chain</td><td class="he">בית צמוד קרקע</td><td>Standalone House</td><td>L3</td>
+        <td class="icon-cell">🏡</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge dup">⚠️</span> Reused as stage-3 emoji + legacy "Dream Home" + closing banner</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Stage 3" data-name="vacation airplane plane">
+        <td>Vacation (one-shot)</td><td class="he">חופשה גדולה</td><td>Big Vacation</td><td>L1 (single tier)</td>
+        <td class="icon-cell">✈️</td><td class="note">metaGoals.ts</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+
+      <!-- States -->
+      <tr data-feature="Meta Goal" data-cat="States" data-name="locked stage padlock">
+        <td>State icon</td><td class="he">שלב נעול</td><td>Locked Stage</td><td>—</td>
+        <td class="icon-cell">🔒</td><td class="note">MetaItemCard.tsx + MetaStageBlock.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same lock used for Finance pension and locked goals</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="States" data-name="completed checkmark">
+        <td>State icon</td><td class="he">הושלם</td><td>Completed (housing/item)</td><td>—</td>
+        <td class="icon-cell">✅</td><td class="note">MetaItemCard.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="States" data-name="stage completed trophy">
+        <td>State icon</td><td class="he">שלב הושלם</td><td>Completed Stage</td><td>—</td>
+        <td class="icon-cell">🏆</td><td class="note">MetaStageBlock.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same trophy as Burger L8 item AND GameCompleteBanner</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="States" data-name="next available sparkles">
+        <td>State pill</td><td class="he">זמין לרכישה</td><td>"Available to buy" pill</td><td>—</td>
+        <td class="icon-cell">✨</td><td class="note">MetaItemCard.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same sparkle as InflationNotification "protected"</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="States" data-name="multi level housing track">
+        <td>Header pill</td><td class="he">מסלול דיור</td><td>"Housing track" header (multi-level)</td><td>—</td>
+        <td class="icon-cell">🏠</td><td class="note">MetaItemCard.tsx MultiLevelCard</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as legacy LIFE_GOALS "Apartment Down-Payment"</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="States" data-name="home owner house complete">
+        <td>Completion line</td><td class="he">בעל בית! הושלם!</td><td>"Homeowner!" message</td><td>—</td>
+        <td class="icon-cell">🏡</td><td class="note">MetaItemCard.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same as housing L3</td>
+      </tr>
+
+      <!-- Game complete banner -->
+      <tr data-feature="Meta Goal" data-cat="Banner" data-name="game complete confetti">
+        <td>Game-complete banner</td><td class="he">מזל טוב!</td><td>"Congratulations" header</td><td>—</td>
+        <td class="icon-cell">🎉🏆🎉</td><td class="note">GameCompleteBanner.tsx</td>
+        <td><span class="badge dup">⚠️</span> Trophy reused</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Banner" data-name="game complete house">
+        <td>Game-complete banner</td><td class="he">ועד בית חלומות</td><td>Closing line house</td><td>—</td>
+        <td class="icon-cell">🏡</td><td class="note">GameCompleteBanner.tsx</td>
+        <td><span class="badge dup">⚠️</span> Same as Housing L3 and Stage-3 stage emoji</td>
+      </tr>
+
+      <!-- Page header -->
+      <tr data-feature="Meta Goal" data-cat="Header" data-name="page title target">
+        <td>Page header</td><td class="he">מסלול החיים</td><td>Goals page title</td><td>—</td>
+        <td class="icon-cell">🎯</td><td class="note">app/goals/page.tsx</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+
+      <!-- Legacy LifeGoal items (still persisted) -->
+      <tr data-feature="Meta Goal" data-cat="Legacy LIFE_GOALS" data-name="legacy vacation beach umbrella">
+        <td class="legacy">Legacy goals (kept for persist compat — not shown in current UI)</td><td class="he legacy">חופשה בחו"ל</td><td class="legacy">Overseas Vacation</td><td>—</td>
+        <td class="icon-cell legacy">🏖️</td><td class="note">data/goals.ts LIFE_GOALS</td>
+        <td><span class="badge dup">⚠️</span> Old taxonomy; superseded by Meta Goal Stage 3 vacation. Designer can deprecate.</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Legacy LIFE_GOALS" data-name="legacy used car">
+        <td class="legacy">Legacy</td><td class="he legacy">רכב יד שנייה</td><td class="legacy">Used Car</td><td>—</td>
+        <td class="icon-cell legacy">🚗</td><td class="note">data/goals.ts</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as Meta Goal Stage-2 Used Car</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Legacy LIFE_GOALS" data-name="legacy new car">
+        <td class="legacy">Legacy</td><td class="he legacy">רכב חדש</td><td class="legacy">New Car</td><td>—</td>
+        <td class="icon-cell legacy">🚙</td><td class="note">data/goals.ts</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as Meta Goal Stage-2 New Car</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Legacy LIFE_GOALS" data-name="legacy apartment downpayment">
+        <td class="legacy">Legacy</td><td class="he legacy">מקדמה לדירה</td><td class="legacy">Apartment Down-Payment</td><td>—</td>
+        <td class="icon-cell legacy">🏠</td><td class="note">data/goals.ts</td>
+        <td><span class="badge dup">⚠️</span> Different "house" glyph than the Meta Goal housing chain.</td>
+      </tr>
+      <tr data-feature="Meta Goal" data-cat="Legacy LIFE_GOALS" data-name="legacy dream home">
+        <td class="legacy">Legacy</td><td class="he legacy">בית החלומות</td><td class="legacy">Dream Home</td><td>—</td>
+        <td class="icon-cell legacy">🏡</td><td class="note">data/goals.ts</td>
+        <td><span class="badge dup">⚠️</span> Same emoji as Meta Goal Stage-3 Standalone House</td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+
+<!-- =============================================================
+     NAVIGATION / GLOBAL UI
+     ============================================================= -->
+<details open data-feature="Navigation / UI">
+  <summary>🧭 Navigation &amp; Global UI <span class="count" data-count></span></summary>
+  <table>
+    <thead><tr>
+      <th>Category</th><th>Item (Hebrew)</th><th>Item (English)</th><th>Tier / Level</th><th>Icon</th><th>Source</th><th>Notes</th>
+    </tr></thead>
+    <tbody>
+
+      <!-- Bottom nav -->
+      <tr data-feature="Navigation / UI" data-cat="Bottom nav" data-name="finance tab bank temple columns">
+        <td>Bottom-nav tab</td><td class="he">מרכז פיננסי</td><td>Finance Center tab</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">BottomNav BankTempleIcon()</td>
+        <td><span class="badge ok">✓</span> Custom SVG: Greek-style temple with gold pediment star</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Bottom nav" data-name="board tab market stall awning">
+        <td>Bottom-nav tab</td><td class="he">עבודה</td><td>Working Board tab</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">BottomNav BoardStallIcon()</td>
+        <td><span class="badge ok">✓</span> Custom SVG: market-stall with red-stripe awning</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Bottom nav" data-name="goals tab photos beach car">
+        <td>Bottom-nav tab</td><td class="he">מטרות</td><td>Goals tab</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">BottomNav GoalsPhotosIcon()</td>
+        <td><span class="badge ok">✓</span> Custom SVG: layered Polaroid photos (beach + car)</td>
+      </tr>
+
+      <!-- Resource bar -->
+      <tr data-feature="Navigation / UI" data-cat="Resource bar" data-name="avatar player blonde female">
+        <td>Header avatar</td><td class="he">אווטאר</td><td>Player Avatar (default)</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">ResourceBar AvatarIllustration()</td>
+        <td><span class="badge ok">✓</span> Custom SVG, no character customisation yet</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Resource bar" data-name="level badge number circle">
+        <td>Level badge</td><td class="he">רמה</td><td>Level number badge</td><td>—</td>
+        <td class="icon-cell">N°</td><td class="note">ResourceBar level-badge</td>
+        <td><span class="badge ok">✓</span> Numeric only, on gold gradient circle</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Resource bar" data-name="coins star header">
+        <td>Header pill</td><td class="he">מטבעות</td><td>Coin balance star</td><td>—</td>
+        <td class="icon-cell">⭐</td><td class="note">ResourceBar + everywhere</td>
+        <td><span class="badge dup">⚠️</span> The game uses ⭐ as the coin glyph in the header / prices, but ResourceBar/MetaItemCard/Finance balance use it. Reward icon for coins is 🪙. Two separate "money" glyphs.</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Resource bar" data-name="energy bolt header">
+        <td>Header pill</td><td class="he">אנרגיה</td><td>Energy bolt</td><td>—</td>
+        <td class="icon-cell">⚡</td><td class="note">ResourceBar + ProducerArea spawner-bolt</td>
+        <td><span class="badge ok">✓</span> Consistent everywhere</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Resource bar" data-name="time speeder hourglass header">
+        <td>Header pill</td><td class="he">מאיצי זמן</td><td>Time-speeder count</td><td>—</td>
+        <td class="icon-cell">⌛</td><td class="note">ResourceBar</td>
+        <td><span class="badge dup">⚠️</span> Resource-bar uses ⌛ but TimeSpeederButton uses ⏳ and reward uses ⏩.</td>
+      </tr>
+
+      <!-- Producer card decoration -->
+      <tr data-feature="Navigation / UI" data-cat="Producer card" data-name="sushi takeout chinese box chopsticks">
+        <td>Producer SVG</td><td class="he">קופסת אוכל סינית</td><td>Takeout Box (Sushi producer)</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">ProducerArea ChainIcon('sushi')</td>
+        <td><span class="badge ok">✓</span> Inline SVG (overrides 🥡 emoji from data)</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Producer card" data-name="burger stove oven flames">
+        <td>Producer SVG</td><td class="he">תנור</td><td>Stove (Burger producer)</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">ProducerArea ChainIcon('burger')</td>
+        <td><span class="badge ok">✓</span> Inline SVG (overrides 🍳)</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Producer card" data-name="art paintbrush palette drop">
+        <td>Producer SVG</td><td class="he">מכחול</td><td>Paintbrush (Art producer)</td><td>—</td>
+        <td class="icon-cell svg">[SVG]</td><td class="note">ProducerArea ChainIcon('art')</td>
+        <td><span class="badge ok">✓</span> Inline SVG (overrides 🖊️)</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Producer card" data-name="producer bolt energy badge">
+        <td>Producer badge</td><td class="he">תג אנרגיה</td><td>Producer corner-bolt badge</td><td>—</td>
+        <td class="icon-cell">⚡</td><td class="note">.spawner-bolt (globals.css)</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+
+      <!-- Toast / micro-interactions -->
+      <tr data-feature="Navigation / UI" data-cat="Toast" data-name="toast generic icon">
+        <td>Toast notification</td><td class="he">הודעת מערכת</td><td>Toast pill (slide-in)</td><td>—</td>
+        <td class="icon-cell">⭐ / ⚡ / ⏩</td><td class="note">ui/ToastHost.tsx + toast.ts</td>
+        <td><span class="badge ok">✓</span> Uses the matching reward emoji passed to <code>toast.success()</code></td>
+      </tr>
+
+      <!-- Coin badge -->
+      <tr data-feature="Navigation / UI" data-cat="Design system" data-name="ds coin badge gold star">
+        <td>Coin badge primitive</td><td class="he">תג מטבע</td><td>Beveled gold-star coin badge</td><td>—</td>
+        <td class="icon-cell svg">[CSS+emoji]</td><td class="note">.ds-coin-badge with ⭐ inside</td>
+        <td><span class="badge ok">✓</span> Reusable design-system primitive</td>
+      </tr>
+
+      <!-- Misc UI badges -->
+      <tr data-feature="Navigation / UI" data-cat="Mission progress" data-name="mission progress fill gold">
+        <td>Progress bar</td><td class="he">מד התקדמות</td><td>Gold progress bar</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">.progress-fill-gold</td>
+        <td><span class="badge ok">✓</span> Used on missions and stage headers</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Booster" data-name="merge booster active sparkle crystal">
+        <td>Banner</td><td class="he">מאיץ מיזוג חד פעמי</td><td>"Merge booster active" banner</td><td>—</td>
+        <td class="icon-cell">🔮</td><td class="note">OrderGallery</td>
+        <td><span class="badge dup">⚠️</span> Same crystal-ball as merge_booster reward</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Trophy item" data-name="trophy l8 generic">
+        <td>Item style</td><td class="he">פריט גביע</td><td>Trophy item style (any L8)</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">.item-trophy</td>
+        <td><span class="badge ok">✓</span> Animated gold glow shared by all L8 chain items</td>
+      </tr>
+
+      <!-- Ambient -->
+      <tr data-feature="Navigation / UI" data-cat="Ambient" data-name="market scene background warm gradient">
+        <td>Background</td><td class="he">רקע שוק חם</td><td>Warm market scene gradient</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">.bg-market-scene</td>
+        <td><span class="badge ok">✓</span> Pure CSS radial-gradient blobs</td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Ambient" data-name="finance background blue gradient">
+        <td>Background</td><td class="he">רקע מרכז פיננסי</td><td>Finance Center background</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">.bg-finance-pattern</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+      <tr data-feature="Navigation / UI" data-cat="Ambient" data-name="goals background purple gradient">
+        <td>Background</td><td class="he">רקע מטרות</td><td>Goals background</td><td>—</td>
+        <td class="icon-cell svg">[CSS]</td><td class="note">.bg-goals-pattern</td>
+        <td><span class="badge ok">✓</span></td>
+      </tr>
+    </tbody>
+  </table>
+</details>
+
+</main>
+
+<script>
+(() => {
+  const q = document.getElementById('q');
+  const fFilter = document.getElementById('featureFilter');
+  const flagFilter = document.getElementById('flagFilter');
+  const totalEl = document.getElementById('totalCount');
+  const visibleEl = document.getElementById('visibleCount');
+  const dupEl = document.getElementById('dupCount');
+  const missingEl = document.getElementById('missingCount');
+
+  const allRows = Array.from(document.querySelectorAll('tbody tr'));
+
+  // Stamp counts on each <details> summary
+  document.querySelectorAll('details').forEach((d) => {
+    const rows = d.querySelectorAll('tbody tr');
+    const slot = d.querySelector('[data-count]');
+    if (slot) slot.textContent = rows.length + ' items';
+  });
+
+  // Initial stat counts
+  const dupTotal = allRows.filter(r => r.querySelector('.badge.dup')).length;
+  const missingTotal = allRows.filter(r => r.querySelector('.badge.missing')).length;
+  totalEl.textContent = allRows.length;
+  dupEl.textContent = dupTotal;
+  missingEl.textContent = missingTotal;
+
+  function applyFilters() {
+    const term = q.value.trim().toLowerCase();
+    const feature = fFilter.value;
+    const flag = flagFilter.value;
+    let visible = 0;
+    allRows.forEach((row) => {
+      const name = (row.dataset.name || '').toLowerCase();
+      const rowFeat = row.dataset.feature || '';
+      const matchesTerm = !term || name.includes(term) || row.textContent.toLowerCase().includes(term);
+      const matchesFeat = !feature || rowFeat === feature;
+      let matchesFlag = true;
+      if (flag === 'dup')      matchesFlag = !!row.querySelector('.badge.dup');
+      if (flag === 'missing')  matchesFlag = !!row.querySelector('.badge.missing');
+      const show = matchesTerm && matchesFeat && matchesFlag;
+      row.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    visibleEl.textContent = visible;
+
+    // Hide whole sections that have zero visible rows
+    document.querySelectorAll('details').forEach((d) => {
+      const rows = d.querySelectorAll('tbody tr:not(.hidden)');
+      d.style.display = rows.length === 0 ? 'none' : '';
+    });
+  }
+
+  q.addEventListener('input', applyFilters);
+  fFilter.addEventListener('change', applyFilters);
+  flagFilter.addEventListener('change', applyFilters);
+  applyFilters();
+})();
+</script>
+
+</body>
+</html>

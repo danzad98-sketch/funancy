@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Finance card — mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet" />
+<style>
+:root {
+  /* Painted PNG icon URLs from /public/assets/icons */
+  --coin: url('/assets/icons/coin.png');
+  --bolt: url('/assets/icons/bolt.png');
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; font-family: 'Heebo', system-ui, sans-serif; }
+body {
+  background:
+    radial-gradient(ellipse at 50% -10%, #d6b89260 0%, transparent 60%),
+    linear-gradient(180deg, #f4e4c4 0%, #d4a96a 100%);
+  min-height: 100vh;
+  color: #2c1608;
+  padding: 24px 16px 64px;
+}
+h1 {
+  font-size: 18px;
+  text-align: center;
+  margin: 0 0 4px;
+  color: #4a2810;
+  font-weight: 900;
+}
+.subtitle {
+  font-size: 12px;
+  text-align: center;
+  color: #4a281099;
+  margin-bottom: 24px;
+}
+.cards {
+  max-width: 380px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============================================================
+ * FIN CARD — premium investment platform card
+ * Navy gradient shell, gold inner border, glass info row.
+ * ============================================================ */
+.fin-card {
+  position: relative;
+  background:
+    linear-gradient(180deg, #1d3358 0%, #0f1f33 100%);
+  border-radius: 18px;
+  padding: 14px 14px 16px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 200, 80, 0.25),
+    0 4px 0 0 rgba(20, 10, 4, 0.30),
+    0 10px 24px rgba(0, 0, 0, 0.40);
+  overflow: hidden;
+}
+.fin-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 0%, rgba(255,200,80,0.10) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* --- Header strip --- */
+.fin-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.fin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fin-platform-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #ffd98a 0%, #d98708 100%);
+  border: 1.5px solid #8a5500;
+  font-size: 18px;
+  box-shadow: 0 1px 0 #6b4200 inset, 0 2px 4px rgba(0,0,0,0.2);
+}
+.fin-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff8ed;
+  letter-spacing: -0.01em;
+}
+.fin-info-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffd98a 0%, #d98708 100%);
+  border: 1.5px solid #8a5500;
+  color: #2a1508;
+  font-size: 12px;
+  font-weight: 900;
+  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-inline-start: 4px;
+  box-shadow: 0 1px 0 #6b4200, 0 2px 4px rgba(0,0,0,0.2);
+}
+.fin-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(180deg, #5ed26a 0%, #2e9637 100%);
+  box-shadow: 0 1px 0 #1f6e26;
+}
+.fin-change.neg {
+  background: linear-gradient(180deg, #ef4d4d 0%, #b81f1f 100%);
+  box-shadow: 0 1px 0 #831313;
+}
+
+/* --- Balance hero --- */
+.fin-balance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff4dc 0%, #f1dfb1 100%);
+  border: 1.5px solid rgba(120, 70, 20, 0.30);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 2px 0 rgba(140, 90, 40, 0.30);
+}
+.fin-balance-coin {
+  width: 28px;
+  height: 28px;
+  background-image: var(--coin);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 1px 1px rgba(80,40,10,0.30));
+}
+.fin-balance-num {
+  font-size: 28px;
+  font-weight: 900;
+  color: #2c1608;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Glass info row --- */
+.fin-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.fin-info-cell {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 200, 80, 0.18);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fin-info-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d4b88a;
+  letter-spacing: 0.02em;
+}
+.fin-info-value {
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff8ed;
+  font-variant-numeric: tabular-nums;
+}
+.fin-info-value.pos { color: #6ed975; }
+.fin-info-value.neg { color: #f37070; }
+
+/* --- Action row --- */
+.fin-actions {
+  display: flex;
+  gap: 8px;
+}
+.fin-btn {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 100ms ease, filter 100ms ease;
+  font-family: inherit;
+}
+.fin-btn.buy {
+  background: linear-gradient(180deg, #5ed26a 0%, #2e9637 100%);
+  box-shadow: 0 3px 0 #1f6e26, 0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.fin-btn.sell {
+  background: linear-gradient(180deg, #ef4d4d 0%, #b81f1f 100%);
+  box-shadow: 0 3px 0 #831313, 0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.30);
+}
+.fin-btn:hover  { filter: brightness(1.08); }
+.fin-btn:active { transform: scale(0.96); }
+
+/* --- Locked variant --- */
+.fin-card.locked .fin-actions { opacity: 0.42; pointer-events: none; }
+.fin-lock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 200, 80, 0.18);
+  border: 1px solid rgba(255, 200, 80, 0.32);
+  color: #ffd98a;
+}
+
+/* --- Collapsed pill (for non-expanded cards in a list) --- */
+.fin-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1d3358 0%, #0f1f33 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 200, 80, 0.20),
+    0 2px 0 0 rgba(20, 10, 4, 0.25);
+  cursor: pointer;
+}
+.fin-pill-left { display: flex; align-items: center; gap: 8px; }
+.fin-pill-name { font-size: 14px; font-weight: 900; color: #fff8ed; }
+.fin-pill-balance { display: flex; align-items: center; gap: 6px; }
+.fin-pill-coin {
+  width: 18px;
+  height: 18px;
+  background-image: var(--coin);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.fin-pill-num {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff8ed;
+  font-variant-numeric: tabular-nums;
+}
+.fin-pill-caret { color: rgba(255, 200, 80, 0.5); font-size: 12px; }
+
+/* --- Section caption --- */
+.caption {
+  font-size: 11px;
+  color: #4a281088;
+  font-weight: 700;
+  text-align: center;
+  margin: 4px 0 0;
+}
+</style>
+</head>
+<body>
+
+<h1>פאיננסי — כרטיס השקעה חדש</h1>
+<div class="subtitle">3 מצבים — נפרשׂ • נעול • מצומצם</div>
+
+<div class="cards">
+
+  <!-- EXPANDED -->
+  <div>
+    <div class="fin-card">
+      <div class="fin-header">
+        <div class="fin-header-left">
+          <div class="fin-platform-icon">🏛️</div>
+          <span class="fin-name">פיקדון בנקאי</span>
+          <button class="fin-info-btn" aria-label="מידע">i</button>
+        </div>
+        <span class="fin-change">↑ +2</span>
+      </div>
+
+      <div class="fin-balance">
+        <span class="fin-balance-coin" aria-hidden></span>
+        <span class="fin-balance-num">2,000</span>
+      </div>
+
+      <div class="fin-info-row">
+        <div class="fin-info-cell">
+          <span class="fin-info-label">ריבית</span>
+          <span class="fin-info-value">2% שנתית</span>
+        </div>
+        <div class="fin-info-cell">
+          <span class="fin-info-label">רווח/הפסד ביחס לכל ההפקדות</span>
+          <span class="fin-info-value pos">+2</span>
+        </div>
+      </div>
+
+      <div class="fin-actions">
+        <button class="fin-btn buy">קנייה</button>
+        <button class="fin-btn sell">מכירה</button>
+      </div>
+    </div>
+    <div class="caption">מצב נפרשׂ — כרטיס פתוח</div>
+  </div>
+
+  <!-- LOCKED VARIANT -->
+  <div>
+    <div class="fin-card locked">
+      <div class="fin-header">
+        <div class="fin-header-left">
+          <div class="fin-platform-icon">🏦</div>
+          <span class="fin-name">קופת גמל להשקעה</span>
+          <button class="fin-info-btn" aria-label="מידע">i</button>
+        </div>
+        <span class="fin-lock-chip">🔒 3 מאיצים</span>
+      </div>
+
+      <div class="fin-balance">
+        <span class="fin-balance-coin" aria-hidden></span>
+        <span class="fin-balance-num">500</span>
+      </div>
+
+      <div class="fin-info-row">
+        <div class="fin-info-cell">
+          <span class="fin-info-label">ריבית</span>
+          <span class="fin-info-value">4% שנתית</span>
+        </div>
+        <div class="fin-info-cell">
+          <span class="fin-info-label">רווח/הפסד ביחס לכל ההפקדות</span>
+          <span class="fin-info-value neg">-12</span>
+        </div>
+      </div>
+
+      <div class="fin-actions">
+        <button class="fin-btn buy">קנייה</button>
+        <button class="fin-btn sell">מכירה</button>
+      </div>
+    </div>
+    <div class="caption">מצב נעול — פעולות מושבתות</div>
+  </div>
+
+  <!-- COLLAPSED VARIANT -->
+  <div>
+    <div class="fin-pill">
+      <div class="fin-pill-left">
+        <div class="fin-platform-icon">📊</div>
+        <span class="fin-pill-name">קרן כספית</span>
+        <button class="fin-info-btn" aria-label="מידע">i</button>
+      </div>
+      <div class="fin-pill-balance">
+        <span class="fin-pill-coin" aria-hidden></span>
+        <span class="fin-pill-num">1,250</span>
+        <span class="fin-pill-caret">◂</span>
+      </div>
+    </div>
+    <div class="caption">מצב מצומצם — לחץ להרחבה</div>
+  </div>
+
+</div>
+
+</body>
+</html>
