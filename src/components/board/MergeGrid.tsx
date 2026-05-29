@@ -215,8 +215,17 @@ export default function MergeGrid() {
 
         <DragOverlay dropAnimation={null}>
           {activeItem ? (
-            <div className="item-bubble scale-125 shadow-xl">
-              {activeItem.emoji}
+            <div
+              className={`item-bubble scale-125 ${
+                activeItem.image ? 'item-bubble--image' : 'shadow-xl'
+              } ${activeItem.level === 8 ? (activeItem.image ? 'item-trophy--image' : 'item-trophy') : ''}`}
+            >
+              {activeItem.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={activeItem.image} alt={activeItem.name} draggable={false} />
+              ) : (
+                activeItem.emoji
+              )}
             </div>
           ) : null}
         </DragOverlay>

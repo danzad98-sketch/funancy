@@ -28,10 +28,17 @@ export default function DraggableItem({ item, cellIndex }: Props) {
       {...listeners}
       {...attributes}
       className={`item-bubble ds-item-lift cursor-grab active:cursor-grabbing touch-none ${
-        item.level === 8 ? 'item-trophy' : ''
-      } ${isNew ? 'item-spawn-once' : ''} ${isDragging ? 'opacity-30 scale-90' : ''}`}
+        item.image ? 'item-bubble--image' : ''
+      } ${item.level === 8 ? (item.image ? 'item-trophy--image' : 'item-trophy') : ''} ${
+        isNew ? 'item-spawn-once' : ''
+      } ${isDragging ? 'opacity-30 scale-90' : ''}`}
     >
-      {item.emoji}
+      {item.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.image} alt={item.name} draggable={false} />
+      ) : (
+        item.emoji
+      )}
     </div>
   );
 }

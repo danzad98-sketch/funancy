@@ -276,6 +276,44 @@ body {
   justify-content: center;
   font-size: 22px;
 }
+/* Frameless variant for items rendered as PNG artwork. The PNG provides
+ * its own visual weight; the cream-frame chrome would only fight with it.
+ * Drop background/border/shadow so the artwork sits "in the cell" naturally,
+ * keeping just a soft drop-shadow for depth. Box dimensions unchanged so
+ * layout / merge / drag math stays identical. */
+.item-bubble--image {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+.item-bubble--image img {
+  /* Each PNG is auto-cropped to its subject's bbox, so contain at 100%
+   * makes every item render at the same visual size. */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+/* Tier-8 image trophy — pure filter-based glow, no frame. */
+.item-bubble.item-trophy--image {
+  animation: trophyGlowImage 2s ease-in-out infinite !important;
+}
+@keyframes trophyGlowImage {
+  0%, 100% {
+    filter:
+      drop-shadow(0 2px 4px rgba(0,0,0,0.25))
+      drop-shadow(0 0 6px rgba(255,193,7,0.6))
+      drop-shadow(0 0 14px rgba(255,152,0,0.4));
+  }
+  50% {
+    filter:
+      drop-shadow(0 2px 4px rgba(0,0,0,0.25))
+      drop-shadow(0 0 10px rgba(255,193,7,0.9))
+      drop-shadow(0 0 22px rgba(255,152,0,0.6));
+  }
+}
 
 /* ===== TROPHY ITEM (Tier 8) ===== */
 .item-trophy {
@@ -916,6 +954,17 @@ body {
     0 2px 3px rgba(0, 0, 0, 0.25);
   font-size: 24px;
   line-height: 1;
+}
+/* Frameless variant matching the board's --image bubble. */
+.mk-sellcard-item--image {
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+}
+.mk-sellcard-item--image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* SELL — overlaps the item square's bottom-right by sliding inline-end

@@ -90,6 +90,7 @@ function makeSellItem(chain: ChainId, level: ItemLevel): SellRequestItem {
     chain: def.chain,
     level: def.level,
     emoji: def.emoji,
+    image: def.image,
     name: def.name,
   };
 }
@@ -133,7 +134,8 @@ function getActiveCharacterIds(active: SellRequest[] | undefined): Set<CharId> {
 
 function generateSingleRequest(earlyGame: boolean, exclude: Set<CharId>): SellRequest {
   const chain = randomPick(ALL_CHAINS);
-  const level = randomLevel(1, earlyGame ? 3 : 6);
+  // Tiers 1-3 are board-only fuel — orders target sellable tiers only.
+  const level = randomLevel(4, earlyGame ? 5 : 8);
   const item = makeSellItem(chain, level);
   const rewardType = randomRewardType(earlyGame);
   const baseValue = Math.round(itemPrice(level) * SELL_MULTIPLIER_SINGLE);
@@ -162,8 +164,8 @@ function generateSingleRequest(earlyGame: boolean, exclude: Set<CharId>): SellRe
 
 function generateDuoRequest(earlyGame: boolean, exclude: Set<CharId>): SellRequest {
   const chain = randomPick(ALL_CHAINS);
-  const level1 = randomLevel(1, earlyGame ? 2 : 5);
-  const level2 = randomLevel(1, earlyGame ? 2 : 5);
+  const level1 = randomLevel(4, earlyGame ? 5 : 7);
+  const level2 = randomLevel(4, earlyGame ? 5 : 7);
   const item1 = makeSellItem(chain, level1);
   const item2 = makeSellItem(chain, level2);
   const rewardType = randomRewardType(earlyGame);
@@ -197,7 +199,7 @@ function generateCategorySetRequest(earlyGame: boolean, exclude: Set<CharId>): S
   const items: SellRequestItem[] = [];
   let totalValue = 0;
   for (let i = 0; i < 3; i++) {
-    const level = randomLevel(1, earlyGame ? 2 : 4);
+    const level = randomLevel(4, earlyGame ? 5 : 6);
     items.push(makeSellItem(chain, level));
     totalValue += itemPrice(level);
   }
@@ -298,10 +300,11 @@ export function generateDemoSellRequests(): SellRequest[] {
     };
   };
 
+  // Per official spec: orders only target sellable tiers (4-8).
   return [
-    makeCoinRequest('sushi', 1 as ItemLevel, demoChars[0]),
-    makeCoinRequest('burger', 2 as ItemLevel, demoChars[1]),
-    makeCoinRequest('art', 2 as ItemLevel, demoChars[2]),
+    makeCoinRequest('sushi',  4 as ItemLevel, demoChars[0]),
+    makeCoinRequest('burger', 4 as ItemLevel, demoChars[1]),
+    makeCoinRequest('art',    4 as ItemLevel, demoChars[2]),
   ];
 }
 

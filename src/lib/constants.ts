@@ -35,19 +35,21 @@ export const SELL_REQUEST_SLOTS = 3;
 //   tier_N price = BASE * 1.10^(N-1)
 // Gentle 10% compound per tier; we round to integers for clean display.
 // Multipliers on top: single 1.0×, duo 1.5×, category_set 2.0×.
-// Scaled 10× from original 5 to match the official Excel mission-target
-// economy (stage 2 M1 = 300 coins, etc.). Compound multiplier preserved.
-// Result table: { 1: 50, 2: 55, 3: 61, 4: 67, 5: 73, 6: 81, 7: 89, 8: 98 }
-const SELL_BASE_TIER_1 = 50;
-const SELL_TIER_MULTIPLIER = 1.10;
-export const SELL_PRICES: Record<number, number> = Object.fromEntries(
-  Array.from({ length: 8 }, (_, i) => [
-    i + 1,
-    Math.round(SELL_BASE_TIER_1 * Math.pow(SELL_TIER_MULTIPLIER, i)),
-  ]),
-) as Record<number, number>;
-// Resulting table: { 1: 5, 2: 6, 3: 6, 4: 7, 5: 7, 6: 8, 7: 9, 8: 11 }
-// Yes — 10% is gentle. PRD says revisit later if needed.
+// Official spec (items_and_chains.xlsx) — Tiers 1-3 are board-only merge
+// fuel and have no sell price. Tiers 4-8 sell for fixed ₪60/70/80/90/100.
+// Tiers 1-3 carry price 0 to keep the table shape identical for legacy
+// callers; the is-sellable check is `level >= MIN_SELLABLE_TIER` (4),
+// exported from data/itemChains.ts.
+export const SELL_PRICES: Record<number, number> = {
+  1: 0,
+  2: 0,
+  3: 0,
+  4: 60,
+  5: 70,
+  6: 80,
+  7: 90,
+  8: 100,
+};
 
 // Bonus multipliers per sell request type
 export const SELL_MULTIPLIER_SINGLE = 1.0;

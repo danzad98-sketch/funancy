@@ -98,8 +98,17 @@ function SellRequestSlot({ request }: { request: SellRequest }) {
         <div className="mk-sellcard-body">
           <div className="mk-sellcard-items">
             {request.items.map((item, idx) => (
-              <span key={idx} className="mk-sellcard-item" aria-label={item.name}>
-                {item.emoji}
+              <span
+                key={idx}
+                className={`mk-sellcard-item ${item.image ? 'mk-sellcard-item--image' : ''}`}
+                aria-label={item.name}
+              >
+                {item.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.image} alt={item.name} draggable={false} />
+                ) : (
+                  item.emoji
+                )}
               </span>
             ))}
           </div>

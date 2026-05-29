@@ -6,6 +6,9 @@ export interface Item {
   chain: ChainId;
   level: ItemLevel;
   emoji: string;
+  /** Optional PNG asset (e.g. "/items/chain1_tier1_flour.png"). When set,
+   *  renderers prefer the image over the emoji fallback. */
+  image?: string;
   name: string;
 }
 
@@ -22,6 +25,7 @@ export interface SellRequestItem {
   chain: ChainId;
   level: ItemLevel;
   emoji: string;
+  image?: string;
   name: string;
 }
 
