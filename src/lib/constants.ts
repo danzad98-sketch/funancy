@@ -35,7 +35,10 @@ export const SELL_REQUEST_SLOTS = 3;
 //   tier_N price = BASE * 1.10^(N-1)
 // Gentle 10% compound per tier; we round to integers for clean display.
 // Multipliers on top: single 1.0×, duo 1.5×, category_set 2.0×.
-const SELL_BASE_TIER_1 = 5;
+// Scaled 10× from original 5 to match the official Excel mission-target
+// economy (stage 2 M1 = 300 coins, etc.). Compound multiplier preserved.
+// Result table: { 1: 50, 2: 55, 3: 61, 4: 67, 5: 73, 6: 81, 7: 89, 8: 98 }
+const SELL_BASE_TIER_1 = 50;
 const SELL_TIER_MULTIPLIER = 1.10;
 export const SELL_PRICES: Record<number, number> = Object.fromEntries(
   Array.from({ length: 8 }, (_, i) => [
@@ -84,6 +87,9 @@ export const HOURS_PER_YEAR = 8760; // legacy, kept for any straggling import
 // New users begin with NOTHING in the wallet: every coin and every booster
 // must be earned during the journey. Energy stays full so they can start
 // playing immediately.
-export const STARTING_COINS = 500;
+// With new low Meta-Goal prices (cheapest tier 1 item: earbuds 12),
+// 100 coins lets fresh user clear the tutorial's meta-upgrade gate
+// immediately (12 earbuds + 16 watch = 28 spent, ~70 left for progression).
+export const STARTING_COINS = 100;
 export const STARTING_ENERGY = 100;
 export const STARTING_TIME_SPEEDERS = 0;

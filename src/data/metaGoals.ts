@@ -6,91 +6,195 @@ import type { MetaStage, MetaItem, MetaItemState } from '@/types/goals';
  *   Each tier price is paid EXACTLY ONCE across the lifetime of the item.
  *   There is no cumulative "upgrade" fee — each Buy = one tier price = one level up.
  *
- * Example (phone, purchase_only... no wait, upgradeable):
- *   tiers[0] = טלפון מקשים, price 300  → pay 300 once to go level_0 → level_1
- *   tiers[1] = סמארטפון,    price 800  → pay 800 once to go level_1 → level_2
- *   Total spent on phone chain = 1100. Nothing is charged twice.
+ * Every item now has 4 tiers (base + 3 upgrades). After tier 3 the item is at
+ * `level_4` and a crown shows; no further Buy actions are possible.
+ *
+ * Item prices are the official spreadsheet values (funancy_economy.xlsx).
+ * Meta Goal inflation (1% per time-booster use) is applied at render time
+ * via `metaInflationFactor` in the store — base prices below are pre-inflation.
  */
 
-// --- Stage 1: טכנולוגיה אישית ---
+// --- Stage 1: טכנולוגיה אישית (Personal Tech) ---
 const STAGE_1_ITEMS: MetaItem[] = [
   {
     id: 'phone',
-    kind: 'upgradeable',
+    kind: 'multi_level',
     state: 'level_0',
     tiers: [
-      { emoji: '📞', name: 'טלפון מקשים', price: 300 },
-      { emoji: '📱', name: 'סמארטפון', price: 800 },
+      { emoji: '📞', name: 'טלפון בסיסי',  price: 20 },
+      { emoji: '📱', name: 'סמארטפון',     price: 32 },
+      { emoji: '📲', name: 'סמארטפון מתקדם', price: 48 },
+      { emoji: '🌟', name: 'טלפון פרימיום', price: 70 },
     ],
   },
   {
     id: 'watch',
-    kind: 'upgradeable',
+    kind: 'multi_level',
     state: 'level_0',
     tiers: [
-      { emoji: '🕐', name: 'שעון רגיל', price: 200 },
-      { emoji: '⌚', name: 'שעון חכם', price: 600 },
+      { emoji: '🕐', name: 'שעון רגיל',     price: 16 },
+      { emoji: '⌚', name: 'שעון איכותי',   price: 26 },
+      { emoji: '⏰', name: 'שעון חכם',      price: 38 },
+      { emoji: '🎖️', name: 'שעון יוקרה',    price: 56 },
     ],
   },
   {
     id: 'earbuds',
-    kind: 'upgradeable',
+    kind: 'multi_level',
     state: 'level_0',
     tiers: [
-      { emoji: '🎵', name: 'אוזניות חוטיות', price: 150 },
-      { emoji: '🎧', name: 'אוזניות בלוטוס', price: 500 },
+      { emoji: '🎵', name: 'אוזניות חוטיות', price: 12 },
+      { emoji: '🎧', name: 'אוזניות בלוטוס', price: 20 },
+      { emoji: '🎶', name: 'אוזניות פרימיום', price: 30 },
+      { emoji: '🌟', name: 'אוזניות סטודיו', price: 44 },
     ],
   },
 ];
 
-// --- Stage 2: עצמאות ---
+// --- Stage 2: בידור ופנאי (Entertainment & Leisure) ---
 const STAGE_2_ITEMS: MetaItem[] = [
   {
-    id: 'computer',
-    kind: 'upgradeable',
+    id: 'smart_speaker',
+    kind: 'multi_level',
     state: 'locked',
     tiers: [
-      { emoji: '🖥️', name: 'מחשב נייח', price: 2000 },
-      { emoji: '💻', name: 'מחשב נייד', price: 5000 },
+      { emoji: '🔊', name: 'רמקול בלוטוס',    price: 35 },
+      { emoji: '📻', name: 'רמקול חכם',       price: 55 },
+      { emoji: '🎙️', name: 'מערכת רמקולים',   price: 85 },
+      { emoji: '🌟', name: 'מערכת סטריאו',    price: 125 },
     ],
   },
   {
-    id: 'car',
-    kind: 'upgradeable',
+    id: 'tablet',
+    kind: 'multi_level',
     state: 'locked',
     tiers: [
-      { emoji: '🚗', name: 'רכב ישן', price: 5000 },
-      { emoji: '🚙', name: 'רכב חדש', price: 15000 },
+      { emoji: '📔', name: 'טאבלט בסיסי',   price: 28 },
+      { emoji: '📱', name: 'טאבלט',         price: 44 },
+      { emoji: '📲', name: 'טאבלט מקצועי',  price: 68 },
+      { emoji: '🌟', name: 'טאבלט פרימיום', price: 100 },
+    ],
+  },
+  {
+    id: 'console',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '🕹️', name: 'קונסולה רטרו',   price: 22 },
+      { emoji: '🎮', name: 'קונסולה',         price: 35 },
+      { emoji: '👾', name: 'קונסולה מתקדמת', price: 54 },
+      { emoji: '🌟', name: 'קונסולת דור הבא', price: 79 },
+    ],
+  },
+];
+
+// --- Stage 3: ניידות ולמידה (Mobility & Learning) ---
+const STAGE_3_ITEMS: MetaItem[] = [
+  {
+    id: 'laptop',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '💻', name: 'מחשב נייד בסיסי', price: 60 },
+      { emoji: '🖥️', name: 'מחשב נייד',       price: 95 },
+      { emoji: '⌨️', name: 'מחשב נייד מקצועי', price: 145 },
+      { emoji: '🌟', name: 'מחשב נייד פרימיום', price: 215 },
+    ],
+  },
+  {
+    id: 'scooter',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '🛴', name: 'קורקינט',          price: 70 },
+      { emoji: '🛵', name: 'קורקינט חשמלי',     price: 110 },
+      { emoji: '⚡', name: 'קורקינט מהיר',     price: 170 },
+      { emoji: '🌟', name: 'קורקינט פרימיום',  price: 250 },
     ],
   },
   {
     id: 'studies',
-    kind: 'purchase_only',
+    kind: 'multi_level',
     state: 'locked',
     tiers: [
-      { emoji: '🎓', name: 'לימודים', price: 8000 },
+      { emoji: '📚', name: 'קורס מקצועי',       price: 50 },
+      { emoji: '🎓', name: 'תעודה',             price: 78 },
+      { emoji: '📜', name: 'דיפלומה',           price: 120 },
+      { emoji: '🌟', name: 'תואר',              price: 177 },
     ],
   },
 ];
 
-// --- Stage 3: דיור ושדרוג חיים ---
-const STAGE_3_ITEMS: MetaItem[] = [
+// --- Stage 4: עצמאות ועבודה (Independence & Work) ---
+const STAGE_4_ITEMS: MetaItem[] = [
+  {
+    id: 'car',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '🚙', name: 'רכב יד שנייה',    price: 90 },
+      { emoji: '🚗', name: 'רכב',             price: 140 },
+      { emoji: '🏎️', name: 'רכב משפחתי',      price: 215 },
+      { emoji: '🌟', name: 'רכב פרימיום',     price: 320 },
+    ],
+  },
+  {
+    id: 'home_office',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '🪑', name: 'פינת עבודה',       price: 72 },
+      { emoji: '🖥️', name: 'הום אופיס',        price: 112 },
+      { emoji: '💼', name: 'הום אופיס מתקדם',  price: 172 },
+      { emoji: '🌟', name: 'אולפן ביתי',       price: 254 },
+    ],
+  },
+  {
+    id: 'vacation',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '🏝️', name: 'סופ״ש בארץ',       price: 80 },
+      { emoji: '✈️', name: 'חופשה בחו״ל',      price: 125 },
+      { emoji: '🌴', name: 'חופשה מורחבת',     price: 192 },
+      { emoji: '🌟', name: 'חופשה יוקרתית',    price: 284 },
+    ],
+  },
+];
+
+// --- Stage 5: דיור ויוקרה (Housing & Luxury) ---
+const STAGE_5_ITEMS: MetaItem[] = [
   {
     id: 'housing',
     kind: 'multi_level',
     state: 'locked',
     tiers: [
-      { emoji: '🏚️', name: 'שכירות', price: 3000 },
-      { emoji: '🏢', name: 'דירה בבניין מגורים', price: 25000 },
-      { emoji: '🏡', name: 'בית צמוד קרקע', price: 100000 },
+      { emoji: '🏚️', name: 'שכירות',           price: 115 },
+      { emoji: '🏢', name: 'דירה',              price: 180 },
+      { emoji: '🏡', name: 'בית פרטי',          price: 276 },
+      { emoji: '🌟', name: 'דירת יוקרה',        price: 406 },
     ],
   },
   {
-    id: 'vacation',
-    kind: 'purchase_only',
+    id: 'furniture',
+    kind: 'multi_level',
     state: 'locked',
     tiers: [
-      { emoji: '✈️', name: 'חופשה גדולה', price: 15000 },
+      { emoji: '🪑', name: 'ריהוט בסיסי',       price: 95 },
+      { emoji: '🛋️', name: 'ריהוט ושיפוץ',      price: 148 },
+      { emoji: '🛏️', name: 'ריהוט מעוצב',       price: 228 },
+      { emoji: '🌟', name: 'שיפוץ יוקרתי',      price: 336 },
+    ],
+  },
+  {
+    id: 'gourmet_vacation',
+    kind: 'multi_level',
+    state: 'locked',
+    tiers: [
+      { emoji: '🏖️', name: 'חופשת חוף',        price: 105 },
+      { emoji: '🍷', name: 'חופשת גורמה',       price: 164 },
+      { emoji: '🛥️', name: 'שייט יוקרה',        price: 252 },
+      { emoji: '🌟', name: 'חופשה אקסקלוסיבית', price: 370 },
     ],
   },
 ];
@@ -107,19 +211,35 @@ export function createInitialMetaStages(): MetaStage[] {
     },
     {
       id: 2,
-      name: 'עצמאות',
-      description: 'צעדים ראשונים לעצמאות כלכלית',
-      emoji: '🎓',
+      name: 'בידור ופנאי',
+      description: 'איכות חיים ופנאי יומיומי',
+      emoji: '🎮',
       status: 'locked',
       items: STAGE_2_ITEMS.map((item) => ({ ...item, tiers: item.tiers.map((t) => ({ ...t })) })),
     },
     {
       id: 3,
-      name: 'דיור ושדרוג חיים',
+      name: 'ניידות ולמידה',
+      description: 'כלים להתקדמות אישית ומקצועית',
+      emoji: '🎓',
+      status: 'locked',
+      items: STAGE_3_ITEMS.map((item) => ({ ...item, tiers: item.tiers.map((t) => ({ ...t })) })),
+    },
+    {
+      id: 4,
+      name: 'עצמאות ועבודה',
+      description: 'בסיס לחיים עצמאיים',
+      emoji: '🚗',
+      status: 'locked',
+      items: STAGE_4_ITEMS.map((item) => ({ ...item, tiers: item.tiers.map((t) => ({ ...t })) })),
+    },
+    {
+      id: 5,
+      name: 'דיור ויוקרה',
       description: 'חלום גדול — בית ואיכות חיים',
       emoji: '🏡',
       status: 'locked',
-      items: STAGE_3_ITEMS.map((item) => ({ ...item, tiers: item.tiers.map((t) => ({ ...t })) })),
+      items: STAGE_5_ITEMS.map((item) => ({ ...item, tiers: item.tiers.map((t) => ({ ...t })) })),
     },
   ];
 }
@@ -141,6 +261,8 @@ export function getCurrentLevel(item: MetaItem): number {
       return 2;
     case 'level_3':
       return 3;
+    case 'level_4':
+      return 4;
     default:
       return 0;
   }
@@ -151,35 +273,21 @@ export function getMaxLevel(item: MetaItem): number {
   return item.tiers.length;
 }
 
-// --- Unlock rules (expressed in terms of current level) ---
+// --- Unlock rules (relaxed: 2 of 3 items at max-level AND every item ≥ level_2) ---
 
-/** Stage 1 → 2: every item bought at least once AND ≥2 of the 3 reached level 2. */
-function checkStage1Complete(items: MetaItem[]): boolean {
-  const allAtLeastLevel1 = items.every((i) => getCurrentLevel(i) >= 1);
-  const atLeast2AtLevel2 = items.filter((i) => getCurrentLevel(i) >= 2).length >= 2;
-  return allAtLeastLevel1 && atLeast2AtLevel2;
+function relaxedStageComplete(items: MetaItem[]): boolean {
+  if (items.length === 0) return false;
+  const everyAtLeastLevel2 = items.every((i) => getCurrentLevel(i) >= 2);
+  const atLeast2Maxed = items.filter((i) => getCurrentLevel(i) >= getMaxLevel(i)).length >= 2;
+  return everyAtLeastLevel2 && atLeast2Maxed;
 }
 
-/** Stage 2 → 3: computer & car both at level 2, studies bought. */
-function checkStage2Complete(items: MetaItem[]): boolean {
-  const computer = items.find((i) => i.id === 'computer');
-  const car = items.find((i) => i.id === 'car');
-  const studies = items.find((i) => i.id === 'studies');
-  if (!computer || !car || !studies) return false;
-  return (
-    getCurrentLevel(computer) >= 2 &&
-    getCurrentLevel(car) >= 2 &&
-    getCurrentLevel(studies) >= 1
-  );
-}
-
-/** Game complete: housing at level 3, vacation purchased. */
-export function checkStage3Complete(items: MetaItem[]): boolean {
-  const housing = items.find((i) => i.id === 'housing');
-  const vacation = items.find((i) => i.id === 'vacation');
-  if (!housing || !vacation) return false;
-  return getCurrentLevel(housing) >= 3 && getCurrentLevel(vacation) >= 1;
-}
+/** Stage N → N+1 advance gate (relaxed: 2 of 3 fully bought + all at ≥ tier-2). */
+function checkStage1Complete(items: MetaItem[]): boolean { return relaxedStageComplete(items); }
+function checkStage2Complete(items: MetaItem[]): boolean { return relaxedStageComplete(items); }
+export function checkStage3Complete(items: MetaItem[]): boolean { return relaxedStageComplete(items); }
+function checkStage4Complete(items: MetaItem[]): boolean { return relaxedStageComplete(items); }
+function checkStage5Complete(items: MetaItem[]): boolean { return relaxedStageComplete(items); }
 
 export function checkStageCompletion(stages: MetaStage[]): MetaStage[] {
   const updated = stages.map((s) => ({
@@ -187,33 +295,27 @@ export function checkStageCompletion(stages: MetaStage[]): MetaStage[] {
     items: s.items.map((i) => ({ ...i, tiers: i.tiers.map((t) => ({ ...t })) })),
   }));
 
-  // Stage 1 → unlock Stage 2
-  if (updated[0].status === 'active' && checkStage1Complete(updated[0].items)) {
-    updated[0].status = 'completed';
-    if (updated[1].status === 'locked') {
-      updated[1].status = 'active';
-      updated[1].items = updated[1].items.map((item) => ({
-        ...item,
-        state: item.state === 'locked' ? 'level_0' : item.state,
-      }));
+  // Cascade unlocks 1 → 2 → 3 → 4 → 5
+  const checks = [
+    checkStage1Complete,
+    checkStage2Complete,
+    checkStage3Complete,
+    checkStage4Complete,
+    checkStage5Complete,
+  ];
+  for (let i = 0; i < updated.length; i++) {
+    if (updated[i].status === 'active' && checks[i](updated[i].items)) {
+      updated[i].status = 'completed';
+      // Unlock next stage if there is one
+      const next = updated[i + 1];
+      if (next && next.status === 'locked') {
+        next.status = 'active';
+        next.items = next.items.map((item) => ({
+          ...item,
+          state: item.state === 'locked' ? 'level_0' : item.state,
+        }));
+      }
     }
-  }
-
-  // Stage 2 → unlock Stage 3
-  if (updated[1].status === 'active' && checkStage2Complete(updated[1].items)) {
-    updated[1].status = 'completed';
-    if (updated[2].status === 'locked') {
-      updated[2].status = 'active';
-      updated[2].items = updated[2].items.map((item) => ({
-        ...item,
-        state: item.state === 'locked' ? 'level_0' : item.state,
-      }));
-    }
-  }
-
-  // Stage 3 complete
-  if (updated[2].status === 'active' && checkStage3Complete(updated[2].items)) {
-    updated[2].status = 'completed';
   }
 
   return updated;
@@ -267,26 +369,22 @@ export function isItemComplete(item: MetaItem): boolean {
  */
 export function getMetaTotalUpgrades(stages: MetaStage[]): number {
   return stages.reduce(
-    (sum, s) => sum + s.items.reduce((isum, it) => isum + getMaxLevel(it), 0),
+    (sum, stage) => sum + stage.items.reduce((s, item) => s + item.tiers.length, 0),
     0,
   );
 }
 
-/** Total Meta-Goal upgrades currently completed. */
+/** Total Meta-Goal upgrades the player has completed so far. */
 export function getMetaCompletedUpgrades(stages: MetaStage[]): number {
   return stages.reduce(
-    (sum, s) => sum + s.items.reduce((isum, it) => isum + getCurrentLevel(it), 0),
+    (sum, stage) => sum + stage.items.reduce((s, item) => s + getCurrentLevel(item), 0),
     0,
   );
 }
 
-/**
- * Progress fraction (0..1) for the 9-step Meta Goal bar (PRD 3).
- * Auto-scales — the bar fills proportionally regardless of how many
- * total upgrades exist, so adding new items doesn't require re-tuning.
- */
+/** Fraction of Meta progression complete across all stages (0..1). */
 export function getMetaProgressFraction(stages: MetaStage[]): number {
   const total = getMetaTotalUpgrades(stages);
-  if (total <= 0) return 0;
+  if (total === 0) return 0;
   return Math.min(1, getMetaCompletedUpgrades(stages) / total);
 }

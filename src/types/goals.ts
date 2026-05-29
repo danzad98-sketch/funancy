@@ -28,7 +28,8 @@ export type MetaItemState =
   | 'level_0'
   | 'level_1'
   | 'level_2'
-  | 'level_3';
+  | 'level_3'
+  | 'level_4';
 
 export type MetaItemKind = 'upgradeable' | 'purchase_only' | 'multi_level';
 

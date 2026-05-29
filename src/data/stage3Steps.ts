@@ -47,10 +47,10 @@ export interface Stage3Step {
     | 'lesson-branch';
 }
 
-// ----- Approved [X] values for new Stage 3 -----
-export const STAGE3_MISSION1_ORDERS = 4;   // complete X orders
-export const STAGE3_MISSION2_ORDERS = 5;
-export const STAGE3_MISSION3_ORDERS = 6;
+// Official Excel mission targets (sheet "תמחור משימות").
+export const STAGE3_MISSION1_ORDERS = 15;  // complete X orders
+export const STAGE3_MISSION2_ORDERS = 20;
+export const STAGE3_MISSION3_ORDERS = 25;
 
 export const STAGE3_STANDING_ORDER_RATE = 0.5;     // 50% split per spec
 export const STAGE3_SALE_DISCOUNT       = 0.10;

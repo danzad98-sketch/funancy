@@ -42,8 +42,8 @@ export interface Stage5Step {
     | 'lesson-timeframe-2';
 }
 
-// Stage 5 approved [X] values
-export const STAGE5_MISSION1_TARGET   = 120;   // coin delta
+// Official Excel mission targets (sheet "תמחור משימות").
+export const STAGE5_MISSION1_TARGET   = 700;   // coin delta
 export const STAGE5_MISSION1_REWARD   = 2;     // boosters
 export const STAGE5_PROVIDENT_BONUS   = 0.10;  // +10% on every deposit into provident
 export const STAGE5_PROVIDENT_LOCK    = 2;     // booster taps until unlocked

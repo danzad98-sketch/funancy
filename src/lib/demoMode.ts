@@ -92,25 +92,26 @@ function buildSnapshot(stage: DemoStage): any {
   // Account balances reflect what a natural player would carry into each
   // stage. Wallet + accounts both monotonically non-decreasing across the
   // 5 stage demo URLs — never take coins from the player at a transition.
+  // Sized for the official Excel mission targets + Meta Goal totals.
   const accounts = createInitialAccounts();
   if (stage >= 2) {
     accounts.deposit.isUnlocked = true;
   }
   if (stage >= 3) {
-    accounts.deposit.balance        = 100;  // M2 deposit + Sale leftover
-    accounts.deposit.totalDeposited = 100;
+    accounts.deposit.balance        = 200;  // S2 M2 deposit (200) carried in
+    accounts.deposit.totalDeposited = 200;
   }
   if (stage >= 4) {
-    // Standing order through Stage 3 grew the deposit.
-    accounts.deposit.balance        = 250;
-    accounts.deposit.totalDeposited = 250;
+    // S3 standing-order moved ~50% of order rewards to deposit.
+    accounts.deposit.balance        = 800;
+    accounts.deposit.totalDeposited = 800;
     accounts.single_stock.isUnlocked = true; // unlocked at start of Stage 4
   }
   if (stage >= 5) {
-    accounts.deposit.balance        = 300;  // Slight more growth + small allocation prep
-    accounts.deposit.totalDeposited = 300;
-    accounts.single_stock.balance        = 100; // Stage 4 player invested ~₪100 in S&P
-    accounts.single_stock.totalDeposited = 100;
+    accounts.deposit.balance        = 1000; // Continued growth + interest
+    accounts.deposit.totalDeposited = 1000;
+    accounts.single_stock.balance        = 400; // S4 M2 S&P invest 350 + slight growth
+    accounts.single_stock.totalDeposited = 350;
     accounts.provident.isUnlocked        = true; // unlocked at start of Stage 5
     accounts.provident.lockedUntilSpeeders = 2;
   }
@@ -124,44 +125,46 @@ function buildSnapshot(stage: DemoStage): any {
     stage4Completed: boolean; stage4Step: number;
     stage5Completed: boolean; stage5Step: number;
   }> = {
-    // Stage 1 is the onboarding — the demo presenter experiences the
-    // real fresh-player path: empty board, fresh-start wallet (per
-    // STARTING_COINS, currently 500 — enough to clear the tutorial's
-    // meta-upgrade gate without grinding), no boosters, 100 energy.
-    // The Stage 1 tutorial teaches spawn → merge → sell from scratch.
+    // Stage 1 onboarding — fresh-player path with new low Meta prices
+    // (cheapest tier-1 item = ₪12). STARTING_COINS now 100 = enough to
+    // buy earbuds (12) + watch (16) for tutorial gate, leave room to grow.
     1: { coins: STARTING_COINS, timeSpeeders: STARTING_TIME_SPEEDERS,
          tutorialCompleted: false, tutorialStep: 0,
          stage1Completed: false, stage1Step: 0,
          stage3Completed: false, stage3Step: 0,
          stage4Completed: false, stage4Step: 0,
          stage5Completed: false, stage5Step: 0 },
-    // Stage 2: matches Stage 1 ending wallet (player buys watch -200 +
-    // earns ~200 in sells during onboarding). Smooth M1/M2/M3 progression.
-    2: { coins: 500,  timeSpeeders: 3,
+    // Stage 2: comfortable for M2 deposit 200 + Stage 2 Meta total 730.
+    // Player earns 300 (M1) + 250 (M3) = 550 throughput.
+    // 400 start + 550 earn − 200 deposit = 750 wallet — covers 730 Meta.
+    2: { coins: 400,  timeSpeeders: 3,
          tutorialCompleted: true,  tutorialStep: 99,
          stage1Completed: false, stage1Step: 0,
          stage3Completed: false, stage3Step: 0,
          stage4Completed: false, stage4Step: 0,
          stage5Completed: false, stage5Step: 0 },
-    // Stage 3: reflects S2 ending — M3 +150 gain offset partly by Meta
-    // browsing, deposit holds M2's 50 + earnings.
-    3: { coins: 600,  timeSpeeders: 5,
+    // Stage 3: orders-based. 60 orders × ~55 coins each = 3,300 gross.
+    // Standing-order moves 50% → 1,650 to wallet + 1,650 to deposit.
+    // 500 start + 1,650 earn = 2,150 wallet — well over Stage 3 Meta 1,540.
+    3: { coins: 500,  timeSpeeders: 5,
          tutorialCompleted: true,  tutorialStep: 99,
          stage1Completed: true,  stage1Step: 99,
          stage3Completed: false, stage3Step: 0,
          stage4Completed: false, stage4Step: 0,
          stage5Completed: false, stage5Step: 0 },
-    // Stage 4: reflects S3 ending — standing-order grew deposit, wallet
-    // earned half of every sale. Ready for S&P invest.
-    4: { coins: 800,  timeSpeeders: 7,
+    // Stage 4: M1 earn 500 + M2 S&P invest 350 + Stage 4 Meta 2,056.
+    // 1,500 start + 500 (M1) − 350 (S&P) = 1,650; ~80% of Meta affordable
+    // with the presenter doing a mix of S&P invest + Meta purchases.
+    4: { coins: 1500, timeSpeeders: 7,
          tutorialCompleted: true,  tutorialStep: 99,
          stage1Completed: true,  stage1Step: 99,
          stage3Completed: true,  stage3Step: 99,
          stage4Completed: false, stage4Step: 0,
          stage5Completed: false, stage5Step: 0 },
-    // Stage 5: reflects S4 ending — comfortable for allocation phase
-    // (≥₪10 × 3 instruments) + camera repair (60) + headroom.
-    5: { coins: 1000, timeSpeeders: 12,
+    // Stage 5: M1 earn 700 + allocation across 3 instruments + camera 60
+    // + Stage 5 Meta 2,675. 2,500 start + 700 (M1) − 60 (camera) = 3,140;
+    // well over Stage 5 Meta with room for ₪300/instrument allocation.
+    5: { coins: 2500, timeSpeeders: 12,
          tutorialCompleted: true,  tutorialStep: 99,
          stage1Completed: true,  stage1Step: 99,
          stage3Completed: true,  stage3Step: 99,

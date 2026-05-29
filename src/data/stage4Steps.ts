@@ -37,10 +37,10 @@ export interface Stage4Step {
     | 'stage-opener';
 }
 
-// Stage 4 approved [X] values
-export const STAGE4_MISSION1_TARGET   = 100;        // coin delta
+// Official Excel mission targets (sheet "תמחור משימות").
+export const STAGE4_MISSION1_TARGET   = 500;        // coin delta
 export const STAGE4_MISSION1_REWARD   = 2;          // boosters
-export const STAGE4_MISSION2_TARGET   = 50;         // coins invested in S&P 500
+export const STAGE4_MISSION2_TARGET   = 350;        // coins invested in S&P 500
 
 export const STAGE4_COMPLETE_ENERGY_REWARD  = 100;
 export const STAGE4_COMPLETE_BOOSTER_REWARD = 5;

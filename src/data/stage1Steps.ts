@@ -59,11 +59,12 @@ export interface Stage1Step {
 }
 
 // --- Numeric placeholders (PRD's [X] values, approved by user) ---
-export const STAGE2_MISSION1_TARGET = 25;   // coins to earn (mission 1)
+// Official Excel mission targets (sheet "תמחור משימות").
+export const STAGE2_MISSION1_TARGET = 300;  // coins to earn (mission 1)
 export const STAGE2_MISSION1_REWARD = 2;    // +2 time boosters
-export const STAGE2_MISSION2_TARGET = 50;   // coins to deposit
+export const STAGE2_MISSION2_TARGET = 200;  // coins to deposit
 export const STAGE2_MISSION2_REWARD = 1;    // +1 time booster
-export const STAGE2_MISSION3_TARGET = 150;  // additional coins to earn
+export const STAGE2_MISSION3_TARGET = 250;  // additional coins to earn
 export const STAGE2_COMPLETE_ENERGY_REWARD = 50; // energy boost on stage complete
 export const STAGE2_INFLATION_RATE_PER_YEAR = 0.01; // 1%/yr meta inflation
 

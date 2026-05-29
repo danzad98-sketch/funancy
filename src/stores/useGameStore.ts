@@ -1228,7 +1228,7 @@ export const useGameStore = create<GameState>()(
             if (s === 'base_owned') return 'level_1';
             if (s === 'upgraded') return 'level_2';
             // Any other unknown value → treat as unowned under the new model.
-            if (s !== 'locked' && s !== 'level_0' && s !== 'level_1' && s !== 'level_2' && s !== 'level_3') {
+            if (s !== 'locked' && s !== 'level_0' && s !== 'level_1' && s !== 'level_2' && s !== 'level_3' && s !== 'level_4') {
               return 'level_0';
             }
             return s;
