@@ -17,7 +17,7 @@ import TimeSpeederAnimation from '@/components/tutorial/TimeSpeederAnimation';
 import MissionCompleteToast from '@/components/tutorial/MissionCompleteToast';
 import { useEffect } from 'react';
 import { useGameStore, createDemoGrid } from '@/stores/useGameStore';
-import { generateDemoSellRequests } from '@/data/orders';
+import { generateDemoSellRequests, generateInitialTutorialSellRequests } from '@/data/orders';
 
 export default function GameShell({ children }: { children: React.ReactNode }) {
   const regenEnergy = useGameStore((s) => s.regenEnergy);
@@ -32,7 +32,13 @@ export default function GameShell({ children }: { children: React.ReactNode }) {
     const state = useGameStore.getState();
     const patch: Record<string, unknown> = {};
     if (!state.sellRequests || state.sellRequests.length === 0) {
-      patch.sellRequests = generateDemoSellRequests();
+      // Fresh Stage 1 player: seed T2 tutorial-bootstrap requests so the
+      // sell step (1.5) is solvable from one merge. After the tutorial,
+      // replacements come from `generateSingleRequest` which respects
+      // MIN_SELLABLE_TIER=4 and gives the full Excel-spec economy.
+      patch.sellRequests = state.tutorialCompleted
+        ? generateDemoSellRequests()
+        : generateInitialTutorialSellRequests();
     }
     // Only auto-seed the grid for post-tutorial demo URLs — never during
     // the Stage 1 onboarding (the board must start empty).

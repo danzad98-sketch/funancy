@@ -316,7 +316,7 @@ export function CameraEventScreen(props: { onResolved: () => void }) {
           <button type="button"
                   className="tut-popup-btn camera-event-pay"
                   onClick={handlePay}
-                  disabled={!canAfford && false}
+                  disabled={!canAfford}
                   title={canAfford ? '' : 'אין מספיק כסף נזיל'}>
             {t('event_urgency_pay_btn')}
           </button>

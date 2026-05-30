@@ -308,6 +308,50 @@ export function generateDemoSellRequests(): SellRequest[] {
   ];
 }
 
+/**
+ * Stage 1 TUTORIAL sell requests — special bootstrap for the onboarding
+ * flow only. The player taps the burger producer (per tutorial step 1.2),
+ * gets 4× T1 קמח, drags two together = T2 בצק. They then need to fulfil
+ * a sale to complete step 1.5 — but per Excel spec T1-T3 are normally
+ * board-only. This generator is the documented exception: a one-shot
+ * T2-level set of requests at a fixed ₪10 each. Once the player completes
+ * the first sale, replacements come from `generateSingleRequest` which
+ * respects MIN_SELLABLE_TIER (= 4) and gives the player the spec economy.
+ *
+ * Three requests, one per chain, so the tutorial works regardless of
+ * which producer the player taps if they explore.
+ */
+export const STAGE1_TUTORIAL_REWARD = 10;
+
+export function generateInitialTutorialSellRequests(): SellRequest[] {
+  const id = () => `sell_${Date.now()}_${sellRequestIdCounter++}`;
+  const tutChars: Character[] = [CHARACTERS[0], CHARACTERS[1], CHARACTERS[2]];
+
+  const makeTutorialRequest = (chain: ChainId, char: Character): SellRequest => {
+    const item = makeSellItem(chain, 2 as ItemLevel);
+    return {
+      id: id(),
+      type: 'single',
+      label: TYPE_LABELS.single,
+      items: [item],
+      rewardType: 'coins',
+      rewardAmount: STAGE1_TUTORIAL_REWARD,
+      rewardLabel: REWARD_LABELS.coins,
+      rewardEmoji: REWARD_EMOJIS.coins,
+      characterEmoji: char.emoji,
+      characterName: char.name,
+      characterId: char.id,
+      bonusMultiplier: SELL_MULTIPLIER_SINGLE,
+    };
+  };
+
+  return [
+    makeTutorialRequest('burger', tutChars[0]),  // primary tutorial path (T2 בצק)
+    makeTutorialRequest('sushi',  tutChars[1]),  // backup if player taps sushi spawner
+    makeTutorialRequest('art',    tutChars[2]),  // backup if player taps art spawner
+  ];
+}
+
 // Legacy compat — kept so old persisted data doesn't crash
 export function generateOrder(): { id: string; requiredChain: ChainId; requiredLevel: ItemLevel; coinReward: number; characterEmoji: string; characterName: string; itemEmoji: string } {
   const r = generateSingleRequest(false, new Set<CharId>());
