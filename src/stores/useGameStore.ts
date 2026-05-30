@@ -14,7 +14,7 @@ import {
   ENERGY_REGEN_MS,
   rollAnnualInflationRate,
 } from '@/lib/constants';
-import { createItem } from '@/data/itemChains';
+import { createItem, getItemDef } from '@/data/itemChains';
 import { generateSellRequest, generateInitialSellRequests, generateDemoSellRequests, generateOrder, generateInitialOrders } from '@/data/orders';
 import { createInitialAccounts } from '@/data/accounts';
 import { getMissionForStage } from '@/data/missions';
@@ -1215,19 +1215,22 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: 'funancy-game-state',
-      version: 1,
-      // Migrate old persisted meta-item states (base_owned/upgraded) to the
-      // unified level-based model. Older sessions may still carry the legacy
-      // strings in localStorage — without this, the level helpers would silently
-      // treat them as level_0 and progression would look broken.
+      // v2 (2026-05-30): Excel-driven Meta Goal economy (5 stages × 3 items
+      // × 4 tiers), new item art via image field, MIN_SELLABLE_TIER=4,
+      // Stage 1 tutorial bootstrap sell requests. Players who visited a
+      // pre-v2 deploy carry stale metaStages (3 stages, fewer tiers, no
+      // images on grid items) — without bumping, the live site shows old
+      // content for returning visitors.
+      version: 2,
       migrate: (persisted: unknown, fromVersion: number) => {
         if (!persisted || typeof persisted !== 'object') return persisted;
         const p = persisted as Record<string, unknown>;
+
+        // v0 → v1: rename legacy meta states base_owned/upgraded → level_1/2.
         if (fromVersion < 1 && Array.isArray(p.metaStages)) {
           const remap = (s: string): string => {
             if (s === 'base_owned') return 'level_1';
             if (s === 'upgraded') return 'level_2';
-            // Any other unknown value → treat as unowned under the new model.
             if (s !== 'locked' && s !== 'level_0' && s !== 'level_1' && s !== 'level_2' && s !== 'level_3' && s !== 'level_4') {
               return 'level_0';
             }
@@ -1243,6 +1246,30 @@ export const useGameStore = create<GameState>()(
               : stage.items,
           }));
         }
+
+        // v1 → v2: full Meta Goal structure changed. Wipe & re-seed
+        // metaStages (5 new stages, new item IDs, 4 tiers each), wipe
+        // sellRequests (GameShell hydrates with tutorial/demo generator
+        // on next mount), and refresh grid items via getItemDef so their
+        // image/name/emoji fields match the new chain content.
+        if (fromVersion < 2) {
+          p.metaStages = createInitialMetaStages();
+          p.sellRequests = [];
+          if (Array.isArray(p.grid)) {
+            p.grid = (p.grid as Array<{ index: number; item: unknown }>).map((cell) => {
+              if (!cell.item) return cell;
+              const itm = cell.item as { chain?: string; level?: number; id?: string };
+              if (!itm.chain || !itm.level) return { ...cell, item: null };
+              try {
+                const def = getItemDef(itm.chain as 'sushi' | 'burger' | 'art', itm.level as 1);
+                return { ...cell, item: { ...def, id: itm.id ?? `item_${Date.now()}_${cell.index}` } };
+              } catch {
+                return { ...cell, item: null };
+              }
+            });
+          }
+        }
+
         return p;
       },
       partialize: (state) => ({

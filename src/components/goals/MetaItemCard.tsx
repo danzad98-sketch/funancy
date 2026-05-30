@@ -5,6 +5,34 @@ import type { MetaItem } from '@/types/goals';
 import { getNextPrice, getNextActionLabel, getCurrentTierIndex, getCurrentLevel, isItemComplete } from '@/data/metaGoals';
 import { useGameStore } from '@/stores/useGameStore';
 
+/**
+ * Per-item track labels for the multi-level card badge. Each Meta Goal
+ * item gets its own emoji + descriptive name; previously the badge was
+ * a hardcoded "🏠 מסלול דיור" on every card regardless of item.
+ */
+const ITEM_TRACK_LABELS: Record<string, string> = {
+  // Stage 1 — טכנולוגיה אישית
+  phone:             '📱 מסלול הטלפון',
+  watch:             '⌚ מסלול השעון',
+  earbuds:           '🎧 מסלול האוזניות',
+  // Stage 2 — בידור ופנאי
+  smart_speaker:     '🔊 מסלול הרמקול',
+  tablet:            '📔 מסלול הטאבלט',
+  console:           '🎮 מסלול הקונסולה',
+  // Stage 3 — ניידות ולמידה
+  laptop:            '💻 מסלול המחשב',
+  scooter:           '🛴 מסלול הקורקינט',
+  studies:           '📚 מסלול הלימודים',
+  // Stage 4 — עצמאות ועבודה
+  car:               '🚗 מסלול הרכב',
+  home_office:       '🖥️ מסלול ההום אופיס',
+  vacation:          '✈️ מסלול החופשה',
+  // Stage 5 — דיור ויוקרה
+  housing:           '🏠 מסלול הדיור',
+  furniture:         '🛋️ מסלול הריהוט',
+  gourmet_vacation:  '🏖️ מסלול חופשת היוקרה',
+};
+
 interface Props {
   item: MetaItem;
   coins: number;
@@ -258,7 +286,9 @@ function MultiLevelCard({
       }
     >
       <div className="flex items-center justify-center gap-1 mb-2">
-        <span className="text-xs font-black text-wood-dark/70">🏠 מסלול דיור</span>
+        <span className="text-xs font-black text-wood-dark/70">
+          {ITEM_TRACK_LABELS[item.id] ?? `${item.tiers[0]?.emoji ?? '🎯'} מסלול ${item.tiers[0]?.name ?? ''}`}
+        </span>
       </div>
 
       {/* Vertical tier chain */}
