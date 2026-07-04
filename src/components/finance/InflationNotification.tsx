@@ -94,7 +94,7 @@ export default function InflationNotification() {
         </div>
       </div>
       <div className="mt-2 pt-2 border-t border-loss-red/20 text-center">
-        <span className="text-[10px] text-wood-dark/60 font-bold">
+        <span className="text-[11px] text-wood-dark font-bold">
           💡 הפקד כסף בפקדון או בקרן כדי להגן עליו!
         </span>
       </div>

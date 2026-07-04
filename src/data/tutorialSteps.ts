@@ -109,10 +109,12 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     btnTextCode: 'onboarding_btn_go',
     route: '/board',
   },
-  // 1.8 — Meta items introduction
+  // 1.8 — Meta items introduction. Targets the whole Stage-1 meta block
+  // (data-tut="meta-items") so ALL three items sit inside the spotlight
+  // cutout and any of them can be purchased to satisfy `meta-upgrade-any`.
   {
     textCode: 'onboarding_meta_item',
-    target: '[data-tut="meta-watch"]',
+    target: '[data-tut="meta-items"]',
     position: 'bottom-safe',
     arrow: 'down',
     gate: 'meta-upgrade-any',

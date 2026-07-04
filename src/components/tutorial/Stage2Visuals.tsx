@@ -102,15 +102,15 @@ export function CompoundGraph({ onContinue }: ScreenProps) {
           aria-hidden
         >
           {/* axes */}
-          <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
-          <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+          <line x1={padL} y1={padT} x2={padL} y2={padT + plotH} stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
+          <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH} stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           {/* year ticks */}
           {Array.from({ length: years + 1 }).map((_, i) => (
             <text
               key={i}
               x={xFor(i)}
               y={padT + plotH + 14}
-              fill="rgba(255, 220, 160, 0.7)"
+              fill="rgba(74,41,0,0.72)"
               fontSize="10"
               textAnchor="middle"
             >
@@ -121,7 +121,7 @@ export function CompoundGraph({ onContinue }: ScreenProps) {
           <path
             d={simplePath}
             fill="none"
-            stroke="#7ec4ff"
+            stroke="#2b7fd4"
             strokeWidth="2.5"
             strokeLinecap="round"
             className="compound-line compound-line--simple"
@@ -130,15 +130,15 @@ export function CompoundGraph({ onContinue }: ScreenProps) {
           <path
             d={compoundPath}
             fill="none"
-            stroke="#ffd840"
+            stroke="#d97706"
             strokeWidth="3"
             strokeLinecap="round"
             className="compound-line compound-line--compound"
           />
         </svg>
         <div className="compound-legend">
-          <span><span className="hedge-dot" style={{ background: '#7ec4ff' }} aria-hidden /> ריבית רגילה</span>
-          <span><span className="hedge-dot" style={{ background: '#ffd840' }} aria-hidden /> ריבית דריבית</span>
+          <span><span className="hedge-dot" style={{ background: '#2b7fd4' }} aria-hidden /> ריבית רגילה</span>
+          <span><span className="hedge-dot" style={{ background: '#d97706' }} aria-hidden /> ריבית דריבית</span>
         </div>
         <button type="button" className="tut-popup-btn" onClick={onContinue}>
           הבא

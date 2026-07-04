@@ -48,9 +48,9 @@ export function WeeklySavingsGraph(props: ScreenProps) {
           aria-hidden
         >
           <line x1={padL} y1={padT} x2={padL} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           {values.map((v, i) => {
             const x = padL + i * (plotW / weeks) + 2;
             const h = (v / maxV) * plotH;
@@ -69,7 +69,7 @@ export function WeeklySavingsGraph(props: ScreenProps) {
             );
           })}
           <text x={padL + plotW - 4} y={padT + 12}
-                fill="#4ade80" fontSize="13" fontWeight="900" textAnchor="end">
+                fill="#15803d" fontSize="13" fontWeight="900" textAnchor="end">
             {Math.round(total)} ₪
           </text>
         </svg>

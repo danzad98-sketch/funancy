@@ -43,8 +43,8 @@ export default function CoinSplitFX() {
 
   return (
     <div className="coin-split-fx" aria-hidden key={pulseKey}>
-      <span className="coin-split-fx-glyph coin-split-fx-glyph--left">🪙</span>
-      <span className="coin-split-fx-glyph coin-split-fx-glyph--right">🪙</span>
+      <span className="coin-split-fx-glyph coin-split-fx-glyph--left">💰</span>
+      <span className="coin-split-fx-glyph coin-split-fx-glyph--right">💰</span>
     </div>
   );
 }

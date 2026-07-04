@@ -161,7 +161,7 @@ export default function BottomNav() {
             className={`nav-illus-card pointer-events-auto ${isActive ? 'active' : ''}`}
           >
             <div className={isActive ? 'drop-shadow' : 'opacity-95'}>{tab.render(isActive)}</div>
-            <span className="text-[9px] font-black text-[#5a2a00] mt-0.5">{tab.label}</span>
+            <span className="text-[11px] font-black text-[#5a2a00] mt-0.5">{tab.label}</span>
           </Link>
         );
       })}

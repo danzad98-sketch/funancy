@@ -18,9 +18,9 @@ export const STRINGS: Record<string, string> = {
   onboarding_welcome:      'ברוך הבא ל-Funancy! 🎉',
   onboarding_producer:     'לחץ על התנור כדי לייצר אייטמים ⚡ ייצר 4 אייטמים',
   onboarding_merge:        'גרור אייטמים זהים כדי לאחד אותם',
-  onboarding_order:        'השלם את ההזמנה כדי להרוויח מטבעות 🪙',
+  onboarding_order:        'השלם את ההזמנה כדי להרוויח מטבעות 💰',
   onboarding_sell:         'לחץ על SELL כדי למכור',
-  onboarding_coins:        'כאן רואים את המטבעות שלך 🪙',
+  onboarding_coins:        'כאן רואים את המטבעות שלך 💰',
   onboarding_meta_nav:     'פתח את המטרות 🎯',
   onboarding_meta_item:    'לחץ לשדרוג ✨',
   onboarding_progress_bar: 'שדרג את כל החפצים לרמה המקסימלית 🏆',
@@ -37,8 +37,8 @@ export const STRINGS: Record<string, string> = {
 
   // ===== Stage 2 — Time, inflation, interest, compound interest =====
 
-  // Mission 1 — earn coins. Number must match STAGE2_MISSION1_TARGET in stage1Steps.ts (300).
-  stage2_mission1_intro:    'משימה ראשונה: הרווח 300 מטבעות 🪙',
+  // Mission 1 — earn coins. Number must match STAGE2_MISSION1_TARGET in stage1Steps.ts (250).
+  stage2_mission1_intro:    'משימה ראשונה: הרווח 250 מטבעות 💰',
   stage2_mission1_intro_btn:'עבור לעבודה',
   stage2_mission1_complete: 'המשימה הושלמה! 🎉 +2 מאיצי זמן',
   stage2_mission1_complete_btn: 'עבור למטרות',
@@ -57,7 +57,7 @@ export const STRINGS: Record<string, string> = {
   deposit_inflation_link:   'איך מגנים על הכסף מהאינפלציה? התשובה הראשונה — תוכנית חיסכון פשוטה: הפיקדון הבנקאי.',
   deposit_intro:            'פיקדון בנקאי: שמים בבנק לזמן מוגדר, והבנק משלם ריבית בתמורה. הריבית מפצה על האינפלציה ושומרת על ערך הכסף.',
 
-  // Mission 2 — deposit 50 coins
+  // Mission 2 — deposit coins.
   // Number must match STAGE2_MISSION2_TARGET in stage1Steps.ts (200).
   stage2_mission2_intro:    'משימה: הפקד 200 מטבעות בפיקדון הבנקאי 🏛️',
   stage2_mission2_complete: 'המשימה הושלמה! 🎉 +1 מאיץ זמן',
@@ -71,10 +71,10 @@ export const STRINGS: Record<string, string> = {
   // 2.5 — Meta Goal live demo
   meta_hedge_demo:          'הריבית כיסתה בדיוק את עליית המחיר — הכסף שלך לא נשחק 🛡️',
 
-  // Mission 3 — earn 150 more coins
+  // Mission 3 — earn more coins (see STAGE2_MISSION3_TARGET below).
   stage2_mission3_intro:    'ככל שתפקיד יותר — הריבית תעבוד קשה יותר בשבילך',
-  // Number must match STAGE2_MISSION3_TARGET in stage1Steps.ts (250).
-  stage2_mission3_intro_target: 'הרוויח עוד 250 מטבעות',
+  // Number must match STAGE2_MISSION3_TARGET in stage1Steps.ts (200).
+  stage2_mission3_intro_target: 'הרוויח עוד 200 מטבעות',
   stage2_mission3_intro_btn: 'חזור לעבוד',
   stage2_mission3_complete: 'המשימה הושלמה! 🎉',
   stage2_mission3_complete_btn: 'חזור לניהול כספים',
@@ -130,11 +130,11 @@ export const STRINGS: Record<string, string> = {
   setup_order_confirmation:  'הוראת הקבע פעילה ✓',
 
   // Mission 1 — complete orders
-  // Number must match STAGE3_MISSION1_ORDERS in stage3Steps.ts (15).
-  stage3_mission1_intro:     'משימה ראשונה: השלם 15 הזמנות בלוח העבודה',
+  // Number must match STAGE3_MISSION1_ORDERS in stage3Steps.ts (5).
+  stage3_mission1_intro:     'משימה ראשונה: השלם 5 הזמנות בלוח העבודה',
   stage3_mission1_tagline:   'עכשיו תראה את הוראת הקבע עובדת',
   stage3_mission1_intro_btn: 'עבור לעבודה',
-  stage3_mission1_complete:  'המשימה הושלמה! חזית את הפיצול עובד 15 פעמים. החיסכון נכנס לבד.',
+  stage3_mission1_complete:  'המשימה הושלמה! חזית את הפיצול עובד 5 פעמים. החיסכון נכנס לבד.',
   stage3_mission1_complete_btn: 'עבור לניהול כספים',
 
   // 3.2 — Standing order in action
@@ -146,8 +146,8 @@ export const STRINGS: Record<string, string> = {
   sale_1_notification:       '🔥 מבצע מוגבל! 10% הנחה על כל האייטמים — לזמן קצר בלבד!',
 
   // Mission 2 — complete more orders
-  // Number must match STAGE3_MISSION2_ORDERS in stage3Steps.ts (20).
-  stage3_mission2_intro:     'משימה: השלם עוד 20 הזמנות',
+  // Number must match STAGE3_MISSION2_ORDERS in stage3Steps.ts (8).
+  stage3_mission2_intro:     'משימה: השלם עוד 8 הזמנות',
   stage3_mission2_intro_btn: 'חזור לעבוד',
   stage3_mission2_complete:  'המשימה הושלמה! הוראת הקבע ממשיכה לעבוד ברקע.',
   stage3_mission2_complete_btn: 'עבור לניהול כספים',
@@ -163,8 +163,8 @@ export const STRINGS: Record<string, string> = {
   sale_2_notification:       '⭐ מבצע נדיר! 10% הנחה — הפעם לא יחזור!',
 
   // Mission 3 — complete more orders
-  // Number must match STAGE3_MISSION3_ORDERS in stage3Steps.ts (25).
-  stage3_mission3_intro:     'משימה: השלם עוד 25 הזמנות',
+  // Number must match STAGE3_MISSION3_ORDERS in stage3Steps.ts (10).
+  stage3_mission3_intro:     'משימה: השלם עוד 10 הזמנות',
   stage3_mission3_intro_btn: 'חזור לעבוד',
   stage3_mission3_complete:  'המשימה הושלמה! חזור לניהול כספים — ננתח את התנהגותך.',
   stage3_mission3_complete_btn: 'עבור לניהול כספים',
@@ -211,14 +211,14 @@ export const STRINGS: Record<string, string> = {
   intro_sp500:              'מדד S&P 500 — סל של 500 החברות הגדולות בארה״ב. כשאתה משקיע במדד — אתה משקיע ב-500 חברות בבת אחת.',
   btn_invest:               'בוא נשקיע',
 
-  // Mission 1 — earn 100 coins
-  // Number must match STAGE4_MISSION1_TARGET in stage4Steps.ts (500).
-  stage4_mission1_intro:    'משימה ראשונה: הרווח 500 מטבעות להשקעה 🪙',
+  // Mission 1 — earn coins.
+  // Number must match STAGE4_MISSION1_TARGET in stage4Steps.ts (350).
+  stage4_mission1_intro:    'משימה ראשונה: הרווח 350 מטבעות להשקעה 💰',
   stage4_mission1_intro_btn:'עבור לעבודה',
   stage4_mission1_complete: 'המשימה הושלמה! 🎉 +2 מאיצי זמן',
   stage4_mission1_complete_btn: 'עבור לניהול כספים',
 
-  // Mission 2 — invest 50 in S&P 500
+  // Mission 2 — invest in S&P 500.
   // Number must match STAGE4_MISSION2_TARGET in stage4Steps.ts (350).
   stage4_mission2_intro:    'משימה: השקע 350 מטבעות ב-S&P 500 📈',
 
@@ -262,8 +262,8 @@ export const STRINGS: Record<string, string> = {
   bonus_provident:           '', // deprecated — Screen C removed per spec
 
   // Mission 1
-  // Number must match STAGE5_MISSION1_TARGET in stage5Steps.ts (700).
-  stage5_mission1_intro:     'משימה ראשונה: הרווח 700 מטבעות 🪙',
+  // Number must match STAGE5_MISSION1_TARGET in stage5Steps.ts (500).
+  stage5_mission1_intro:     'משימה ראשונה: הרווח 500 מטבעות 💰',
   stage5_mission1_intro_btn: 'עבור לעבודה',
   stage5_mission1_complete:  'המשימה הושלמה! 🎉 +2 מאיצי זמן',
   stage5_mission1_complete_btn: 'עבור לניהול כספים',

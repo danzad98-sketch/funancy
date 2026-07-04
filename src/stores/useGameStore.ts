@@ -15,7 +15,7 @@ import {
   rollAnnualInflationRate,
 } from '@/lib/constants';
 import { createItem, getItemDef } from '@/data/itemChains';
-import { generateSellRequest, generateInitialSellRequests, generateDemoSellRequests, generateOrder, generateInitialOrders } from '@/data/orders';
+import { generateSellRequest, generateInitialSellRequests, generateDemoSellRequests, generateInitialTutorialSellRequests, generateOrder, generateInitialOrders, getStageTune, generateTunedSellRequests, STAGE4_TUNE, STAGE5_TUNE } from '@/data/orders';
 import { createInitialAccounts } from '@/data/accounts';
 import { getMissionForStage } from '@/data/missions';
 import { LIFE_GOALS } from '@/data/goals';
@@ -45,8 +45,99 @@ export function createDemoGrid(): GridCell[] {
   return cells;
 }
 
-function createEmptyGrid(): GridCell[] {
+export function createEmptyGrid(): GridCell[] {
   return Array.from({ length: GRID_SIZE }, (_, i) => ({ index: i, item: null }));
+}
+
+/**
+ * SINGLE SOURCE OF TRUTH for a fresh Stage-1 game.
+ *
+ * Every start path funnels through this builder so the normal fresh start,
+ * the demo-restart (`resetGame`), and the `?demo=stageN` snapshot cannot
+ * drift apart. It returns ONLY persisted data fields (no actions) — the
+ * exact shape that `partialize` writes to localStorage — so `demoMode.ts`
+ * can spread it and override just the per-stage differences.
+ *
+ * Invariant: the board is EMPTY on a fresh start. Items only ever appear
+ * via player action (spawn/merge) or an explicit demo preset that overrides
+ * `grid`. Nothing here or downstream may silently re-populate the board.
+ */
+export function createInitialGameData(now: number = Date.now()) {
+  return {
+    // Resources
+    coins: STARTING_COINS,
+    energy: STARTING_ENERGY,
+    timeSpeeders: STARTING_TIME_SPEEDERS,
+    level: 1,
+    lastEnergyRegenTimestamp: now,
+    lastInflationTimestamp: now,
+    lastOnlineTimestamp: now,
+    grid: createEmptyGrid(),
+    orders: [] as Order[],
+    sellRequests: [] as SellRequest[],
+    mergeBoosterActive: false,
+    totalMerges: 0,
+    totalSellsTier3Plus: 0,
+    totalSpeedersUsed: 0,
+    gameYear: 1,
+    lastInflationResult: null,
+    accounts: createInitialAccounts(),
+    currentStage: 1 as Stage,
+    currentMission: getMissionForStage(1),
+    marketCrashTriggered: false,
+    lastChanges: {},
+    goals: LIFE_GOALS.map((g) => ({ ...g })),
+    metaStages: createInitialMetaStages(),
+    gameCompleted: false,
+
+    // Onboarding
+    tutorialStep: 0,
+    tutorialCompleted: false,
+    tutorialArmed: false,
+    producerTapCount: 0,
+    stage1Step: 0,
+    stage1Completed: false,
+    s2M1CoinBaseline: 0,
+    s2M2DepositBaseline: 0,
+    mission3CoinBaseline: 0,
+    mission6DepositBaseline: 0,
+    // Stage 3
+    stage3Step: 0,
+    stage3Completed: false,
+    s3StandingOrderActive: false,
+    s3StandingOrderTotal: 0,
+    s3m1OrdersBaseline: 0,
+    s3m2OrdersBaseline: 0,
+    s3m3OrdersBaseline: 0,
+    s3MakeupOrdersBaseline: 0,
+    s3MakeupTarget: 0,
+    s3OrdersDuringSales: 0,
+    activeSale: null,
+    s3SaleSpent1: 0,
+    s3SaleSpent2: 0,
+    totalOrdersCompleted: 0,
+    // Stage 4
+    stage4Step: 0,
+    stage4Completed: false,
+    s4M1CoinBaseline: 0,
+    s4M2SP500Baseline: 0,
+    s4SP500StartBalance: 0,
+    s4LastSP500Path: [] as number[],
+    s4ScriptedDropPending: false,
+    s4PositiveSeriesPending: false,
+    s4MetaPurchaseCount: 0,
+    // Stage 5
+    stage5Step: 0,
+    stage5Completed: false,
+    intro_journey_completed: false,
+    s5M1CoinBaseline: 0,
+    s5CameraOutcome: 'pending' as const,
+    s5CameraStartedAt: null,
+    s5MetaPurchaseCount: 0,
+    metaInflationFactor: 1.0,
+    metaInflationStarted: false,
+    timeSpeederAnimating: false,
+  };
 }
 
 interface GameState {
@@ -283,82 +374,11 @@ const now = Date.now();
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      // Initial state
-      coins: STARTING_COINS,
-      energy: STARTING_ENERGY,
-      timeSpeeders: STARTING_TIME_SPEEDERS,
-      level: 1,
-      lastEnergyRegenTimestamp: now,
-      lastInflationTimestamp: now,
-      lastOnlineTimestamp: now,
-      // Grid starts empty on the server to avoid SSR/client hydration
-      // mismatch (dnd-kit auto-IDs drift if items mount on the server).
-      // GameShell.useEffect populates the demo grid right after hydration.
-      grid: createEmptyGrid(),
-      orders: [], // Legacy — empty, we use sellRequests now
-      sellRequests: [], // Initialized empty — hydrated from localStorage or populated on first client render
-      mergeBoosterActive: false,
-      totalMerges: 0,
-      totalSellsTier3Plus: 0,
-      totalSpeedersUsed: 0,
-      gameYear: 1,
-      lastInflationResult: null,
-      accounts: createInitialAccounts(),
-      currentStage: 1 as Stage,
-      currentMission: getMissionForStage(1),
-      marketCrashTriggered: false,
-      lastChanges: {},
-      goals: LIFE_GOALS.map((g) => ({ ...g })),
-      metaStages: createInitialMetaStages(),
-      gameCompleted: false,
-
-      // Onboarding initial state
-      tutorialStep: 0,
-      tutorialCompleted: false,
-      tutorialArmed: false,
-      producerTapCount: 0,
-      stage1Step: 0,
-      stage1Completed: false,
-      s2M1CoinBaseline: 0,
-      s2M2DepositBaseline: 0,
-      mission3CoinBaseline: 0,
-      mission6DepositBaseline: 0,
-      // Stage 3 (standing-order rebuild)
-      stage3Step: 0,
-      stage3Completed: false,
-      s3StandingOrderActive: false,
-      s3StandingOrderTotal: 0,
-      s3m1OrdersBaseline: 0,
-      s3m2OrdersBaseline: 0,
-      s3m3OrdersBaseline: 0,
-      s3MakeupOrdersBaseline: 0,
-      s3MakeupTarget: 0,
-      s3OrdersDuringSales: 0,
-      activeSale: null,
-      s3SaleSpent1: 0,
-      s3SaleSpent2: 0,
-      totalOrdersCompleted: 0,
-      // Stage 4
-      stage4Step: 0,
-      stage4Completed: false,
-      s4M1CoinBaseline: 0,
-      s4M2SP500Baseline: 0,
-      s4SP500StartBalance: 0,
-      s4LastSP500Path: [],
-      s4ScriptedDropPending: false,
-      s4PositiveSeriesPending: false,
-      s4MetaPurchaseCount: 0,
-      // Stage 5
-      stage5Step: 0,
-      stage5Completed: false,
-      intro_journey_completed: false,
-      s5M1CoinBaseline: 0,
-      s5CameraOutcome: 'pending',
-      s5CameraStartedAt: null,
-      s5MetaPurchaseCount: 0,
-      metaInflationFactor: 1.0,
-      metaInflationStarted: false,
-      timeSpeederAnimating: false,
+      // Initial state — SINGLE SOURCE OF TRUTH via createInitialGameData().
+      // The board starts EMPTY on the server (avoids SSR/dnd-kit hydration
+      // drift) and stays empty on a fresh start; GameShell only seeds sell
+      // requests after hydration. Never re-populate the board here.
+      ...createInitialGameData(now),
 
       // Onboarding actions
       advanceTutorial: () =>
@@ -381,6 +401,10 @@ export const useGameStore = create<GameState>()(
             tutorialStep: 99,
             tutorialArmed: false,
             accounts,
+            // Level badge / currentStage are DERIVED from the real journey
+            // (single source of truth). Stage 1 complete → entering Stage 2.
+            level: 2,
+            currentStage: 2 as Stage,
           };
         }),
       armTutorialStep: () => set({ tutorialArmed: true }),
@@ -401,6 +425,8 @@ export const useGameStore = create<GameState>()(
           return {
             stage1Completed: true,
             stage1Step: 99,
+            level: 3,
+            currentStage: 3 as Stage,
           };
         }),
       advanceStage3: () =>
@@ -416,7 +442,12 @@ export const useGameStore = create<GameState>()(
             stage3Completed: true,
             stage3Step: 99,
             accounts,
+            level: 4,
+            currentStage: 4 as Stage,
             s4SP500StartBalance: accounts.single_stock.balance,
+            // Reseed the board with eased Stage-4 requests (tier 3-4,
+            // 80-100 coins) so the 500-coin mission is reachable quickly.
+            sellRequests: generateTunedSellRequests(STAGE4_TUNE),
           };
         }),
       setStage3Step: (idx: number) => set({ stage3Step: idx }),
@@ -441,6 +472,11 @@ export const useGameStore = create<GameState>()(
             stage4Completed: true,
             stage4Step: 99,
             accounts,
+            level: 5,
+            currentStage: 5 as Stage,
+            // Reseed with eased Stage-5 requests (tier 3-4, 100-150 coins)
+            // so the 700-coin mission is reachable quickly.
+            sellRequests: generateTunedSellRequests(STAGE5_TUNE),
           };
         }),
       armStage4ScriptedDrop: () => set({ s4ScriptedDropPending: true }),
@@ -631,7 +667,15 @@ export const useGameStore = create<GameState>()(
         // once the journey is officially complete.
         const remainingRequests = state.sellRequests.filter((r) => r.id !== requestId);
         const isEarlyGame = !state.intro_journey_completed;
-        const newRequest = generateSellRequest(remainingRequests, isEarlyGame);
+        // Stage 4/5 easing: emit a well-paying low-tier single so late-stage
+        // coin missions (500 / 700) are reachable in a handful of sales.
+        const stageTune = getStageTune({
+          stage1Completed: state.stage1Completed,
+          stage3Completed: state.stage3Completed,
+          stage4Completed: state.stage4Completed,
+          stage5Completed: state.stage5Completed,
+        });
+        const newRequest = generateSellRequest(remainingRequests, isEarlyGame, stageTune);
         const newSellRequests = state.sellRequests.map((r) =>
           r.id === requestId ? newRequest : r
         );
@@ -961,72 +1005,24 @@ export const useGameStore = create<GameState>()(
         set({ lastInflationTimestamp: Date.now() });
       },
 
+      // DEPRECATED / NEUTRALIZED — intentional no-op.
+      //
+      // This was a SECOND, competing mission+stage system (`currentMission`
+      // from data/missions.ts). It auto-advanced `currentStage`, `level`, and
+      // granted +2 timeSpeeders whenever its own target was met. Because
+      // STARTING_COINS (100) already exceeded mission_1's target (25), it
+      // fired on the player's very FIRST action and silently inflated the
+      // level badge and speeder count during the real intro journey — a
+      // classic "two sources of truth" regression vector.
+      //
+      // The single source of truth for stage/level is now the intro-journey
+      // flags (stage{1,3,4,5}Completed) set by the real completeStage*
+      // actions, which also derive `level` and `currentStage`. Mission
+      // progress bars/triggers read STAGE*_MISSION*_TARGET via the overlays
+      // and MissionReminderWidget. This method is kept only to satisfy the
+      // GameState interface and its residual call sites; it does nothing.
       checkMission: () => {
-        const state = get();
-        const mission = state.currentMission;
-        let currentValue = 0;
-
-        switch (mission.type) {
-          case 'earn_coins':
-            currentValue = state.coins;
-            break;
-          case 'deposit':
-            currentValue = Object.values(state.accounts).reduce(
-              (sum, a) => sum + a.totalDeposited, 0
-            );
-            break;
-          case 'profit':
-            currentValue = Math.max(0, Object.values(state.accounts).reduce(
-              (sum, a) => sum + (a.balance - a.totalDeposited) + (a.realizedProfitLoss || 0), 0
-            ));
-            break;
-          case 'diversify':
-            currentValue = Object.values(state.accounts).filter(
-              (a) => a.type !== 'checking' && a.isUnlocked && a.totalDeposited > 0
-            ).length;
-            break;
-          case 'survive_crash':
-            currentValue = state.marketCrashTriggered ? 1 : 0;
-            break;
-          case 'first_deposit':
-            // Has the player deposited anything into any non-checking account?
-            currentValue = Object.values(state.accounts).some(
-              (a) => a.type !== 'checking' && a.totalDeposited > 0
-            ) ? 1 : 0;
-            break;
-          case 'deposit_profit':
-            // Total profit earned from deposits (unrealized + realized, non-checking accounts)
-            currentValue = Math.max(0, Math.round(
-              Object.values(state.accounts)
-                .filter((a) => a.type !== 'checking')
-                .reduce((sum, a) => sum + (a.balance - a.totalDeposited) + (a.realizedProfitLoss || 0), 0)
-            ));
-            break;
-          case 'sell_tier3':
-            currentValue = state.totalSellsTier3Plus || 0;
-            break;
-          case 'merge_count':
-            currentValue = state.totalMerges || 0;
-            break;
-          case 'use_speeder':
-            currentValue = state.totalSpeedersUsed || 0;
-            break;
-        }
-
-        const updated = { ...mission, currentValue };
-
-        if (currentValue >= mission.targetValue && state.currentStage < 5) {
-          const nextStage = (state.currentStage + 1) as Stage;
-          const nextMission = getMissionForStage(nextStage);
-          set({
-            currentStage: nextStage,
-            currentMission: nextMission,
-            level: state.level + 1,
-            timeSpeeders: state.timeSpeeders + 2,
-          });
-        } else {
-          set({ currentMission: updated });
-        }
+        /* no-op: see comment above */
       },
 
       purchaseGoal: (goalId: string) => {
@@ -1136,80 +1132,22 @@ export const useGameStore = create<GameState>()(
 
       resetGame: () => {
         // Demo restart: wipe ALL progression (Meta Goal, Finance, board,
-        // missions, sell requests) and re-seed the curated demo state.
-        // Resources (coins/energy/timeSpeeders) snap back to the demo
-        // defaults so the presenter never runs dry between audiences.
-        const n = Date.now();
+        // missions, sell requests) back to a genuine FRESH-START Stage 1.
+        // Because this resets the tutorial to step 0, the Working Board
+        // MUST start EMPTY — the onboarding tutorial teaches the player to
+        // spawn their first item. Seeding a full demo grid here was a Bug 1
+        // source (a full board while the tutorial says "tap to make one").
+        // Sell requests use the tutorial-bootstrap set so the sell step is
+        // solvable from a single merge.
+        //
+        // SINGLE INIT PATH: reuse createInitialGameData() so a demo restart
+        // is byte-for-byte identical to a first-ever fresh start. The only
+        // override is the sell-request bootstrap (the fresh builder leaves
+        // sellRequests empty for GameShell to hydrate; here we seed the
+        // tutorial set directly so the restart is immediately playable).
         set({
-          coins: STARTING_COINS,
-          energy: STARTING_ENERGY,
-          timeSpeeders: STARTING_TIME_SPEEDERS,
-          level: 1,
-          lastEnergyRegenTimestamp: n,
-          lastInflationTimestamp: n,
-          lastOnlineTimestamp: n,
-          grid: createDemoGrid(),
-          orders: [],
-          sellRequests: generateDemoSellRequests(),
-          mergeBoosterActive: false,
-          totalMerges: 0,
-          totalSellsTier3Plus: 0,
-          totalSpeedersUsed: 0,
-          gameYear: 1,
-          lastInflationResult: null,
-          accounts: createInitialAccounts(),
-          currentStage: 1 as Stage,
-          currentMission: getMissionForStage(1),
-          marketCrashTriggered: false,
-          lastChanges: {},
-          goals: LIFE_GOALS.map((g) => ({ ...g })),
-          metaStages: createInitialMetaStages(),
-          gameCompleted: false,
-          // Onboarding — restart replays the tutorial + Stage 1 flow.
-          tutorialStep: 0,
-          tutorialCompleted: false,
-          producerTapCount: 0,
-          stage1Step: 0,
-          stage1Completed: false,
-          s2M1CoinBaseline: 0,
-          s2M2DepositBaseline: 0,
-          mission3CoinBaseline: 0,
-          mission6DepositBaseline: 0,
-          // Stage 3 (standing-order rebuild) — full reset on demo restart
-          stage3Step: 0,
-          stage3Completed: false,
-          s3StandingOrderActive: false,
-          s3StandingOrderTotal: 0,
-          s3m1OrdersBaseline: 0,
-          s3m2OrdersBaseline: 0,
-          s3m3OrdersBaseline: 0,
-          s3MakeupOrdersBaseline: 0,
-          s3MakeupTarget: 0,
-          s3OrdersDuringSales: 0,
-          activeSale: null,
-          s3SaleSpent1: 0,
-          s3SaleSpent2: 0,
-          totalOrdersCompleted: 0,
-          // Stage 4 — full reset on demo restart
-          stage4Step: 0,
-          stage4Completed: false,
-          s4M1CoinBaseline: 0,
-          s4M2SP500Baseline: 0,
-          s4SP500StartBalance: 0,
-          s4LastSP500Path: [],
-          s4ScriptedDropPending: false,
-          s4PositiveSeriesPending: false,
-          s4MetaPurchaseCount: 0,
-          // Stage 5 — full reset on demo restart
-          stage5Step: 0,
-          stage5Completed: false,
-          intro_journey_completed: false,
-          s5M1CoinBaseline: 0,
-          s5CameraOutcome: 'pending',
-          s5CameraStartedAt: null,
-          s5MetaPurchaseCount: 0,
-          metaInflationFactor: 1.0,
-          metaInflationStarted: false,
+          ...createInitialGameData(Date.now()),
+          sellRequests: generateInitialTutorialSellRequests(),
         });
       },
     }),
@@ -1356,15 +1294,26 @@ export const useGameStore = create<GameState>()(
 // reset that fires synchronously at module load, AFTER Zustand's persist
 // middleware has rehydrated. We use `setState` so the new values are saved
 // back to localStorage via `partialize`.
+//
+// BUG-1 STRUCTURAL FIX: when we send a mid-tutorial player back to step 0 we
+// ALSO clear the board. The tutorial teaches spawning the first item from an
+// empty board; a persisted grid rehydrating here (from a partial pre-quit
+// session) was the surviving "board is full while the tutorial says tap to
+// make one" path. Replaying the tutorial ⇒ empty board, always.
 if (typeof window !== 'undefined') {
   // Defer to next microtask so persist's rehydrate has settled.
   Promise.resolve().then(() => {
     const s = useGameStore.getState();
-    if (!s.tutorialCompleted && (s.tutorialStep !== 0 || s.tutorialArmed || s.producerTapCount !== 0)) {
+    const hasBoardItems = s.grid.some((c) => c.item !== null);
+    if (
+      !s.tutorialCompleted &&
+      (s.tutorialStep !== 0 || s.tutorialArmed || s.producerTapCount !== 0 || hasBoardItems)
+    ) {
       useGameStore.setState({
         tutorialStep: 0,
         tutorialArmed: false,
         producerTapCount: 0,
+        grid: createEmptyGrid(),
       });
     }
   });

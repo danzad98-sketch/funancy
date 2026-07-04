@@ -69,7 +69,12 @@ function getActiveMission(state: ReturnType<typeof useGameStore.getState>): Acti
         id: 's2-m1', label: '1',
         textCode: 'stage2_mission1_intro',
         captionCode: 'mission_reminder_caption_1',
-        current: state.coins,
+        // Bug 3 fix: track the DELTA earned since the mission began, not
+        // total coins. The completion gate in Stage1Overlay already uses
+        // `coins - s2M1CoinBaseline`; the widget must match it or a player
+        // who enters Stage 2 with a large balance sees an instantly-full
+        // "300 / 300" bar while the mission is really at 0.
+        current: Math.max(0, state.coins - state.s2M1CoinBaseline),
         target: STAGE2_MISSION1_TARGET,
       };
     }
@@ -78,7 +83,9 @@ function getActiveMission(state: ReturnType<typeof useGameStore.getState>): Acti
         id: 's2-m2', label: '2',
         textCode: 'stage2_mission2_intro',
         captionCode: 'mission_reminder_caption_2',
-        current: state.accounts?.deposit?.balance ?? 0,
+        // Match the delta-based completion gate (deposit balance minus the
+        // baseline captured when the mission began).
+        current: Math.max(0, (state.accounts?.deposit?.balance ?? 0) - state.s2M2DepositBaseline),
         target: STAGE2_MISSION2_TARGET,
       };
     }

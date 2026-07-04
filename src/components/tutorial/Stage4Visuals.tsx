@@ -173,19 +173,19 @@ function SP500PathGraph(props: {
              className="sp500-graph-svg">
           {/* axes */}
           <line x1={padL} y1={padT} x2={padL} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           {/* y-axis labels */}
           {tickValues.map((v, i) => (
             <text key={i} x={padL - 6} y={yFor(v) + 3}
-                  fill="rgba(255, 220, 160, 0.7)" fontSize="9" textAnchor="end">
+                  fill="rgba(74,41,0,0.72)" fontSize="9" textAnchor="end">
               {Math.round(v)}
             </text>
           ))}
           {/* horizontal start-balance reference line */}
           <line x1={padL} y1={yFor(startBal)} x2={padL + plotW} y2={yFor(startBal)}
-                stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4 4" />
+                stroke="rgba(74,41,0,0.18)" strokeWidth="1" strokeDasharray="4 4" />
           {/* path */}
           <path
             d={d}
@@ -211,7 +211,7 @@ function SP500PathGraph(props: {
           <circle cx={xFor(data.length - 1)} cy={yFor(endBal)} r="6"
                   fill={isPositive ? '#4ade80' : '#ff5a4a'} stroke="#fff8ed" strokeWidth="2" />
           <text x={xFor(data.length - 1) - 8} y={yFor(endBal) - 10}
-                fill="#fff8ed" fontSize="11" fontWeight="900" textAnchor="end">
+                fill="#2c1608" fontSize="11" fontWeight="900" textAnchor="end">
             {Math.round(endBal)}
           </text>
         </svg>

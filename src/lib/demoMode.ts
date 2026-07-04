@@ -15,14 +15,11 @@
  *   http://localhost:PORT/?demo=stage5
  */
 
-import { createDemoGrid } from '@/stores/useGameStore';
-import { STARTING_COINS, STARTING_ENERGY, STARTING_TIME_SPEEDERS, GRID_SIZE } from '@/lib/constants';
-import type { GridCell } from '@/types/game';
+import { createDemoGrid, createInitialGameData } from '@/stores/useGameStore';
+import { STARTING_COINS, STARTING_TIME_SPEEDERS } from '@/lib/constants';
 import { createInitialAccounts } from '@/data/accounts';
-import { createInitialMetaStages } from '@/data/metaGoals';
-import { LIFE_GOALS } from '@/data/goals';
-import { getMissionForStage } from '@/data/missions';
-import { generateDemoSellRequests } from '@/data/orders';
+import { generateDemoSellRequests, generateTunedSellRequests, STAGE4_TUNE, STAGE5_TUNE } from '@/data/orders';
+import type { Stage } from '@/types/finance';
 
 export type DemoStage = 1 | 2 | 3 | 4 | 5;
 
@@ -70,7 +67,10 @@ export function applyDemoPreset(stage: DemoStage): void {
   try { sessionStorage.setItem(DEMO_SESSION_KEY, String(stage)); } catch {}
 
   const snapshot = buildSnapshot(stage);
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: snapshot, version: 1 })); } catch {}
+  // version MUST match the store's persist version (2). Writing an older
+  // version here would run migrate() on load and wipe metaStages /
+  // sellRequests / grid — destroying the tuned per-stage snapshot.
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: snapshot, version: 2 })); } catch {}
 
   // Strip `?demo=` and land on the stage's home route. Hard navigation
   // forces Zustand persist to rehydrate from the snapshot we just wrote.
@@ -173,83 +173,48 @@ function buildSnapshot(stage: DemoStage): any {
   };
   const s = perStage[stage];
 
-  // Stage 1: empty board so the onboarding tutorial can teach spawning
-  //   from scratch. Stages 2-5: pre-seeded demo grid so the presenter has
-  //   something to interact with immediately.
-  const emptyGrid: GridCell[] = Array.from(
-    { length: GRID_SIZE },
-    (_, i) => ({ index: i, item: null }),
-  );
+  // Stage-specific sell requests:
+  //   Stage 1 — empty (onboarding teaches spawning from scratch).
+  //   Stages 4/5 — tuned low-tier / high-reward requests.
+  //   Stages 2/3 — standard demo requests.
+  const sellRequests =
+    stage === 1
+      ? []
+      : stage === 4
+        ? generateTunedSellRequests(STAGE4_TUNE)
+        : stage === 5
+          ? generateTunedSellRequests(STAGE5_TUNE)
+          : generateDemoSellRequests();
 
+  // SINGLE INIT PATH: start from the same builder the normal game uses,
+  // then apply only the per-stage demo overrides. This guarantees demo
+  // start and normal start cannot structurally diverge — every field the
+  // store persists is present with a correct default, and we override just
+  // the deltas below.
   return {
-    coins: s.coins,
-    energy: STARTING_ENERGY,
-    timeSpeeders: s.timeSpeeders,
-    level: 1,
-    lastEnergyRegenTimestamp: now,
-    lastInflationTimestamp:   now,
-    lastOnlineTimestamp:      now,
-    grid: stage === 1 ? emptyGrid : createDemoGrid(),
-    orders: [],
-    sellRequests: stage === 1 ? [] : generateDemoSellRequests(),
-    mergeBoosterActive: false,
-    totalMerges: 0,
-    totalSellsTier3Plus: 0,
-    totalSpeedersUsed: 0,
-    gameYear: 1,
-    accounts,
-    currentStage: 1,
-    currentMission: getMissionForStage(1),
-    marketCrashTriggered: false,
-    lastChanges: {},
-    goals: LIFE_GOALS.map((g) => ({ ...g })),
-    metaStages: createInitialMetaStages(),
-    gameCompleted: false,
+    ...createInitialGameData(now),
 
-    // Tutorial / Stage 2
+    // Resources / progression
+    coins: s.coins,
+    timeSpeeders: s.timeSpeeders,
+    level: stage as Stage,
+    currentStage: stage as Stage,
+
+    // Board: Stage 1 stays empty (from the builder); 2-5 get the demo grid.
+    grid: stage === 1 ? createInitialGameData(now).grid : createDemoGrid(),
+    sellRequests,
+    accounts,
+
+    // Journey flags
     tutorialStep: s.tutorialStep,
     tutorialCompleted: s.tutorialCompleted,
-    tutorialArmed: false,
-    producerTapCount: 0,
     stage1Step: s.stage1Step,
     stage1Completed: s.stage1Completed,
-    s2M1CoinBaseline: 0,
-    s2M2DepositBaseline: 0,
-    mission3CoinBaseline: 0,
-    mission6DepositBaseline: 0,
-
-    // Stage 3
     stage3Step: s.stage3Step,
     stage3Completed: s.stage3Completed,
-    s3StandingOrderActive: false,
-    s3StandingOrderTotal: 0,
-    s3m1OrdersBaseline: 0, s3m2OrdersBaseline: 0, s3m3OrdersBaseline: 0,
-    s3MakeupOrdersBaseline: 0, s3MakeupTarget: 0,
-    s3OrdersDuringSales: 0,
-    totalOrdersCompleted: 0,
-    activeSale: null,
-    s3SaleSpent1: 0, s3SaleSpent2: 0,
-
-    // Stage 4
     stage4Step: s.stage4Step,
     stage4Completed: s.stage4Completed,
-    s4M1CoinBaseline: 0, s4M2SP500Baseline: 0,
-    s4SP500StartBalance: 0,
-    s4LastSP500Path: [],
-    s4ScriptedDropPending: false, s4PositiveSeriesPending: false,
-    s4MetaPurchaseCount: 0,
-
-    // Stage 5
     stage5Step: s.stage5Step,
     stage5Completed: s.stage5Completed,
-    intro_journey_completed: false,
-    s5M1CoinBaseline: 0,
-    s5CameraOutcome: 'pending',
-    s5CameraStartedAt: null,
-    s5MetaPurchaseCount: 0,
-
-    // Meta inflation
-    metaInflationFactor: 1.0,
-    metaInflationStarted: false,
   };
 }

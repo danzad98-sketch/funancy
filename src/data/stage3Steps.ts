@@ -47,10 +47,14 @@ export interface Stage3Step {
     | 'lesson-branch';
 }
 
-// Official Excel mission targets (sheet "תמחור משימות").
-export const STAGE3_MISSION1_ORDERS = 15;  // complete X orders
-export const STAGE3_MISSION2_ORDERS = 20;
-export const STAGE3_MISSION3_ORDERS = 25;
+// Stage 3 order-mission targets. Reduced from the original 15/20/25 to a
+// gentler 5/8/10 ramp so the demo flows quickly without the presenter
+// grinding dozens of sales. (Text in strings.ts + the completion gates in
+// MissionReminderWidget all read these same constants, so text/bar/trigger
+// stay aligned automatically.)
+export const STAGE3_MISSION1_ORDERS = 5;   // complete X orders
+export const STAGE3_MISSION2_ORDERS = 8;
+export const STAGE3_MISSION3_ORDERS = 10;
 
 export const STAGE3_STANDING_ORDER_RATE = 0.5;     // 50% split per spec
 export const STAGE3_SALE_DISCOUNT       = 0.10;
@@ -58,8 +62,9 @@ export const STAGE3_MM_ANNUAL_RATE      = 0.04;    // legacy — still used by S
 
 export const STAGE3_MAKEUP_MULTIPLIER_PARTIAL = 1.0;  // 1× orders done during sales
 export const STAGE3_MAKEUP_MULTIPLIER_FULL    = 1.5;  // 1.5× for the both-sales case
-export const STAGE3_MAKEUP_TARGET_MAX_PARTIAL = 8;    // cap (orders)
-export const STAGE3_MAKEUP_TARGET_MAX_FULL    = 12;
+// Caps scaled down proportionally with the 15/20/25 -> 5/8/10 reduction.
+export const STAGE3_MAKEUP_TARGET_MAX_PARTIAL = 3;    // cap (orders)
+export const STAGE3_MAKEUP_TARGET_MAX_FULL    = 5;
 
 export const STAGE3_COMPLETE_ENERGY_REWARD  = 75;
 export const STAGE3_COMPLETE_BOOSTER_REWARD = 3;
@@ -86,7 +91,7 @@ export const STAGE3_STEPS: Stage3Step[] = [
     btnTextCode: 'stage3_mission1_intro_btn',
     position: 'center', gate: 'special-button', route: 'any' },
 
-  // 4 — passive: complete 4 orders
+  // 4 — passive: complete 5 orders
   { kind: 'popup', textCode: null,
     gate: 'orders-threshold-s3-1', route: 'any' },
 
@@ -115,7 +120,7 @@ export const STAGE3_STEPS: Stage3Step[] = [
     btnTextCode: 'stage3_mission2_intro_btn',
     position: 'center', gate: 'special-button', route: 'any' },
 
-  // 10 — passive: complete 5 orders
+  // 10 — passive: complete 8 orders
   { kind: 'popup', textCode: null,
     gate: 'orders-threshold-s3-2', route: 'any' },
 
@@ -152,7 +157,7 @@ export const STAGE3_STEPS: Stage3Step[] = [
     btnTextCode: 'stage3_mission3_intro_btn',
     position: 'center', gate: 'special-button', route: 'any' },
 
-  // 18 — passive: complete 6 orders
+  // 18 — passive: complete 10 orders
   { kind: 'popup', textCode: null,
     gate: 'orders-threshold-s3-3', route: 'any' },
 

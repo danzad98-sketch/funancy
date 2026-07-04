@@ -119,6 +119,46 @@ function randomRequestType(earlyGame: boolean = false): SellRequestType {
   return 'category_set';
 }
 
+/**
+ * Per-stage difficulty tuning for Working Board sell requests.
+ *
+ * Stages 4 and 5 were too grindy: the default early-game pool asks for
+ * tier 4-5 items (60-70 coins each) and mixes in duos/sets, so reaching
+ * the 500 / 700-coin missions took many merges. Per demo-tuning request,
+ * stages 4 and 5 now emit SIMPLE single requests of low-tier items (easy
+ * to make in 1-2 merges) that pay a fixed high coin band, so the player
+ * reaches the mission targets in a handful of sales.
+ *
+ *   Stage 4 → tier 3-4 items, 100-130 coins per sale
+ *   Stage 5 → tier 3-4 items, 130-170 coins per sale
+ */
+export interface StageTune {
+  minLevel: number;
+  maxLevel: number;
+  rewardMin: number;
+  rewardMax: number;
+}
+export const STAGE4_TUNE: StageTune = { minLevel: 3, maxLevel: 4, rewardMin: 100, rewardMax: 130 };
+export const STAGE5_TUNE: StageTune = { minLevel: 3, maxLevel: 4, rewardMin: 130, rewardMax: 170 };
+
+/** Resolve the active stage's sell tune (or null if no special tuning). */
+export function getStageTune(opts: {
+  stage1Completed: boolean;
+  stage3Completed: boolean;
+  stage4Completed: boolean;
+  stage5Completed: boolean;
+}): StageTune | null {
+  // Stage 5 active: stage 4 done, stage 5 not yet.
+  if (opts.stage4Completed && !opts.stage5Completed) return STAGE5_TUNE;
+  // Stage 4 active: stage 3 done, stage 4 not yet.
+  if (opts.stage3Completed && !opts.stage4Completed) return STAGE4_TUNE;
+  return null;
+}
+
+function randInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 let sellRequestIdCounter = 0;
 
 /** Collect characterIds currently in use by other active requests so we
@@ -134,8 +174,9 @@ function getActiveCharacterIds(active: SellRequest[] | undefined): Set<CharId> {
 
 function generateSingleRequest(earlyGame: boolean, exclude: Set<CharId>): SellRequest {
   const chain = randomPick(ALL_CHAINS);
-  // Tiers 1-3 are board-only fuel — orders target sellable tiers only.
-  const level = randomLevel(4, earlyGame ? 5 : 8);
+  // Tier 3+ is sellable. Early game asks for tier 3-5 (reachable in 2-4
+  // merges); later game widens to tier 4-8 for bigger payouts.
+  const level = randomLevel(earlyGame ? 3 : 4, earlyGame ? 5 : 8);
   const item = makeSellItem(chain, level);
   const rewardType = randomRewardType(earlyGame);
   const baseValue = Math.round(itemPrice(level) * SELL_MULTIPLIER_SINGLE);
@@ -164,8 +205,8 @@ function generateSingleRequest(earlyGame: boolean, exclude: Set<CharId>): SellRe
 
 function generateDuoRequest(earlyGame: boolean, exclude: Set<CharId>): SellRequest {
   const chain = randomPick(ALL_CHAINS);
-  const level1 = randomLevel(4, earlyGame ? 5 : 7);
-  const level2 = randomLevel(4, earlyGame ? 5 : 7);
+  const level1 = randomLevel(earlyGame ? 3 : 4, earlyGame ? 5 : 7);
+  const level2 = randomLevel(earlyGame ? 3 : 4, earlyGame ? 5 : 7);
   const item1 = makeSellItem(chain, level1);
   const item2 = makeSellItem(chain, level2);
   const rewardType = randomRewardType(earlyGame);
@@ -199,7 +240,7 @@ function generateCategorySetRequest(earlyGame: boolean, exclude: Set<CharId>): S
   const items: SellRequestItem[] = [];
   let totalValue = 0;
   for (let i = 0; i < 3; i++) {
-    const level = randomLevel(4, earlyGame ? 5 : 6);
+    const level = randomLevel(earlyGame ? 3 : 4, earlyGame ? 5 : 6);
     items.push(makeSellItem(chain, level));
     totalValue += itemPrice(level);
   }
@@ -228,9 +269,59 @@ function generateCategorySetRequest(earlyGame: boolean, exclude: Set<CharId>): S
   };
 }
 
-export function generateSellRequest(existingRequests?: SellRequest[], earlyGame: boolean = false): SellRequest {
-  const type = randomRequestType(earlyGame);
+/**
+ * Tuned single request for stages 4/5 — a low-tier item (easy to make)
+ * that pays a fixed high coin band. Always a `single` so the player never
+ * has to assemble a duo/set to make progress during these late stages.
+ */
+function generateTunedSingleRequest(tune: StageTune, exclude: Set<CharId>): SellRequest {
+  const chain = randomPick(ALL_CHAINS);
+  const level = randomLevel(tune.minLevel, tune.maxLevel);
+  const item = makeSellItem(chain, level);
+  const rewardAmount = randInt(tune.rewardMin, tune.rewardMax);
+  const character = pickCharacter(exclude);
+
+  return {
+    id: `sell_${Date.now()}_${sellRequestIdCounter++}`,
+    type: 'single',
+    label: TYPE_LABELS.single,
+    items: [item],
+    rewardType: 'coins',
+    rewardAmount,
+    rewardLabel: REWARD_LABELS.coins,
+    rewardEmoji: REWARD_EMOJIS.coins,
+    characterEmoji: character.emoji,
+    characterName: character.name,
+    characterId: character.id,
+    bonusMultiplier: SELL_MULTIPLIER_SINGLE,
+  };
+}
+
+export function generateSellRequest(
+  existingRequests?: SellRequest[],
+  earlyGame: boolean = false,
+  tune: StageTune | null = null,
+): SellRequest {
   const excludeIds = getActiveCharacterIds(existingRequests);
+
+  // Stage 4/5 tuning short-circuits the normal weighted pool: always a
+  // simple, well-paying single request.
+  if (tune) {
+    let request = generateTunedSingleRequest(tune, excludeIds);
+    if (existingRequests && existingRequests.length > 0) {
+      const key = (r: SellRequest) =>
+        r.items.map((i) => `${i.chain}:${i.level}`).join('|');
+      const existingKeys = new Set(existingRequests.map(key));
+      let attempts = 0;
+      while (existingKeys.has(key(request)) && attempts < 10) {
+        request = generateTunedSingleRequest(tune, excludeIds);
+        attempts++;
+      }
+    }
+    return request;
+  }
+
+  const type = randomRequestType(earlyGame);
 
   const gen = (t: SellRequestType) => {
     if (t === 'single') return generateSingleRequest(earlyGame, excludeIds);
@@ -253,6 +344,22 @@ export function generateSellRequest(existingRequests?: SellRequest[], earlyGame:
   }
 
   return request;
+}
+
+/**
+ * Three tuned single requests — used to seed the board when a stage with
+ * special tuning (4 or 5) becomes active, so the very first sales already
+ * pay the eased coin band instead of the leftover early-game requests.
+ */
+export function generateTunedSellRequests(tune: StageTune): SellRequest[] {
+  const requests: SellRequest[] = [];
+  const exclude = new Set<CharId>();
+  for (let i = 0; i < 3; i++) {
+    const r = generateTunedSingleRequest(tune, new Set(exclude));
+    requests.push(r);
+    exclude.add(r.characterId as CharId);
+  }
+  return requests;
 }
 
 export function generateInitialSellRequests(): SellRequest[] {
@@ -316,7 +423,7 @@ export function generateDemoSellRequests(): SellRequest[] {
  * board-only. This generator is the documented exception: a one-shot
  * T2-level set of requests at a fixed ₪10 each. Once the player completes
  * the first sale, replacements come from `generateSingleRequest` which
- * respects MIN_SELLABLE_TIER (= 4) and gives the player the spec economy.
+ * respects MIN_SELLABLE_TIER (= 3) and gives the player the spec economy.
  *
  * Three requests, one per chain, so the tutorial works regardless of
  * which producer the player taps if they explore.

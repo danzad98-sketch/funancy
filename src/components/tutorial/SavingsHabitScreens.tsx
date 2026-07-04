@@ -62,14 +62,14 @@ export function SavingsHabit1Screen({ onContinue }: ScreenProps) {
         >
           {/* axes */}
           <line x1={padL} y1={padT} x2={padL} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
 
           {/* month ticks (every 3rd) */}
           {[0, 3, 6, 9, 11].map((i) => (
             <text key={i} x={xFor(i)} y={padT + plotH + 14}
-                  fill="rgba(255,220,160,0.7)" fontSize="10" textAnchor="middle">
+                  fill="rgba(74,41,0,0.72)" fontSize="10" textAnchor="middle">
               {`חודש ${i + 1}`}
             </text>
           ))}
@@ -90,7 +90,7 @@ export function SavingsHabit1Screen({ onContinue }: ScreenProps) {
           />
           <text
             x={xFor(months - 1) - 6} y={yFor(maxY) - 10}
-            fill="#fff8ed" fontSize="11" fontWeight="900" textAnchor="end"
+            fill="#2c1608" fontSize="11" fontWeight="900" textAnchor="end"
           >
             {`${Math.round(maxY)}₪`}
           </text>

@@ -18,6 +18,16 @@ export default function MetaStageBlock({ stage, coins, onPurchase }: Props) {
 
   return (
     <div
+      // Stage 1 (id === 1) carries the tutorial spotlight anchor for the
+      // onboarding meta-upgrade step (1.8). Previously the step targeted
+      // `[data-tut="meta-watch"]`, which only existed on the legacy
+      // single-tier card; after the Excel rewrite every item became a
+      // multi-level card and the selector resolved to nothing, so the
+      // Spotlight fell back to a full-screen click blocker and the whole
+      // /goals screen became unclickable (the "buy does nothing" bug).
+      // Anchoring on the first stage's block keeps all three Stage-1 items
+      // inside the spotlight cutout so any of them is purchasable.
+      data-tut={stage.id === 1 ? 'meta-items' : undefined}
       className={`mx-3 mt-3 rounded-2xl overflow-hidden transition-all ${
         isCompleted
           ? 'border-3 border-highlight-green shadow-lg'

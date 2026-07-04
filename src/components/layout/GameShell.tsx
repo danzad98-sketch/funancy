@@ -16,7 +16,7 @@ import CoinSplitFX from '@/components/tutorial/CoinSplitFX';
 import TimeSpeederAnimation from '@/components/tutorial/TimeSpeederAnimation';
 import MissionCompleteToast from '@/components/tutorial/MissionCompleteToast';
 import { useEffect } from 'react';
-import { useGameStore, createDemoGrid } from '@/stores/useGameStore';
+import { useGameStore } from '@/stores/useGameStore';
 import { generateDemoSellRequests, generateInitialTutorialSellRequests } from '@/data/orders';
 
 export default function GameShell({ children }: { children: React.ReactNode }) {
@@ -25,28 +25,30 @@ export default function GameShell({ children }: { children: React.ReactNode }) {
 
   // Hydrate sell requests client-side after mount. Per partner-review fix
   // the BOARD now starts empty for new users — they spawn their first
-  // items themselves during the onboarding tutorial. Only seed the demo
-  // grid when the player is already past the tutorial AND the grid is
-  // empty (e.g., they reset state without entering Stage 1 from scratch).
+  // items themselves during the onboarding tutorial.
+  //
+  // IMPORTANT (Bug 1 fix): we do NOT auto-seed the grid here anymore. The
+  // previous heuristic — "if tutorialCompleted && grid is all-empty, fill
+  // it with createDemoGrid()" — spontaneously re-populated the Working
+  // Board for ANY post-tutorial player who happened to have an empty
+  // board (including a fresh Stage-1 demo player, or a returning user with
+  // a stale persisted `tutorialCompleted: true`). That is exactly the
+  // "board loads full of items" bug. The Working Board must only ever be
+  // populated by (a) the player spawning/merging, or (b) an explicit demo
+  // preset snapshot (stages 2-5, which set `grid: createDemoGrid()`
+  // directly). GameShell only bootstraps SELL REQUESTS now.
   useEffect(() => {
     const state = useGameStore.getState();
-    const patch: Record<string, unknown> = {};
     if (!state.sellRequests || state.sellRequests.length === 0) {
       // Fresh Stage 1 player: seed T2 tutorial-bootstrap requests so the
       // sell step (1.5) is solvable from one merge. After the tutorial,
       // replacements come from `generateSingleRequest` which respects
       // MIN_SELLABLE_TIER=4 and gives the full Excel-spec economy.
-      patch.sellRequests = state.tutorialCompleted
-        ? generateDemoSellRequests()
-        : generateInitialTutorialSellRequests();
-    }
-    // Only auto-seed the grid for post-tutorial demo URLs — never during
-    // the Stage 1 onboarding (the board must start empty).
-    if (state.tutorialCompleted && state.grid.every((c) => c.item === null)) {
-      patch.grid = createDemoGrid();
-    }
-    if (Object.keys(patch).length > 0) {
-      useGameStore.setState(patch);
+      useGameStore.setState({
+        sellRequests: state.tutorialCompleted
+          ? generateDemoSellRequests()
+          : generateInitialTutorialSellRequests(),
+      });
     }
   }, []);
 

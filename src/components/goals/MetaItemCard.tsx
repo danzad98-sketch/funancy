@@ -101,26 +101,27 @@ export default function MetaItemCard({ item, coins, onPurchase, stageLocked }: P
   const isLocked = stageLocked || item.state === 'locked';
   const { guard, isLocked: isProcessing } = useClickGuard();
 
-  // Tutorial step 1.8 — when the player upgrades the WATCH on an armed
-  // step, advance to step 1.9. Other meta items are blocked entirely
-  // while step 1.8 is active.
+  // Tutorial step 1.8 (`meta-upgrade-any`) — the player upgrades ANY one
+  // of the Stage-1 items to advance to step 1.9. Meta purchases are
+  // blocked during earlier tutorial steps (the player shouldn't shop
+  // before the meta lesson), and during step 1.8 itself until the popup
+  // is armed (tapped "Continue"). Previously this was hard-coded to the
+  // WATCH only, which — combined with the missing spotlight target — made
+  // the phone (and every other item) a silent dead button. Now any item
+  // works, matching the gate's name and the user's expectation.
   const tutorialCompleted = useGameStore((s) => s.tutorialCompleted);
   const tutorialStep = useGameStore((s) => s.tutorialStep);
   const tutorialArmed = useGameStore((s) => s.tutorialArmed);
   const advanceTutorial = useGameStore((s) => s.advanceTutorial);
-  const isWatchStep = !tutorialCompleted && tutorialStep === 7;
-  const isThisTheWatch = item.id === 'watch';
-  // During tutorial step 1.8, block all non-watch items entirely; block
-  // the watch too until the popup is armed.
+  const isMetaStep = !tutorialCompleted && tutorialStep === 7;
   const tutBlocksPurchase =
-    (isWatchStep && !isThisTheWatch) ||
-    (isWatchStep && isThisTheWatch && !tutorialArmed) ||
-    (!tutorialCompleted && !isWatchStep);
+    (isMetaStep && !tutorialArmed) ||        // step 1.8: must arm first
+    (!tutorialCompleted && !isMetaStep);     // any earlier step: blocked
 
   const handleCardPurchase = (id: string) => {
     if (tutBlocksPurchase) return;
     onPurchase(id);
-    if (isWatchStep && isThisTheWatch && tutorialArmed) advanceTutorial();
+    if (isMetaStep && tutorialArmed) advanceTutorial();
   };
 
   if (item.kind === 'multi_level') {
@@ -143,9 +144,6 @@ export default function MetaItemCard({ item, coins, onPurchase, stageLocked }: P
 
   return (
     <div
-      // data-tut="meta-watch" — used by the tutorial overlay (step 7)
-      // to spotlight specifically the watch card.
-      data-tut={isThisTheWatch ? 'meta-watch' : undefined}
       className={`rounded-2xl border-3 p-3 transition-all relative ${
         completed
           ? 'bg-gradient-to-b from-highlight-green-light to-white border-highlight-green'

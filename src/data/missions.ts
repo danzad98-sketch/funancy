@@ -8,7 +8,7 @@ export const STAGE_MISSIONS: Mission[] = [
     id: 'mission_1',
     stageId: 1,
     type: 'earn_coins',
-    description: 'הרווח 25 מטבעות 🪙',
+    description: 'הרווח 25 מטבעות 💰',
     targetValue: 25,
     currentValue: 0,
     isCompleted: false,

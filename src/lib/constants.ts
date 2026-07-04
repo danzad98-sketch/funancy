@@ -35,20 +35,21 @@ export const SELL_REQUEST_SLOTS = 3;
 //   tier_N price = BASE * 1.10^(N-1)
 // Gentle 10% compound per tier; we round to integers for clean display.
 // Multipliers on top: single 1.0×, duo 1.5×, category_set 2.0×.
-// Official spec (items_and_chains.xlsx) — Tiers 1-3 are board-only merge
-// fuel and have no sell price. Tiers 4-8 sell for fixed ₪60/70/80/90/100.
-// Tiers 1-3 carry price 0 to keep the table shape identical for legacy
-// callers; the is-sellable check is `level >= MIN_SELLABLE_TIER` (4),
-// exported from data/itemChains.ts.
+// Sell price per tier. Tiers 1-2 are board-only merge fuel (price 0).
+// Tier 3+ is sellable (see MIN_SELLABLE_TIER = 3 in data/itemChains.ts) —
+// tier 3 is reachable in two merges, so making it worth ₪60 lets players
+// earn a meaningful amount early without grinding to tier 4. The whole
+// curve was raised (was 60/70/80/90/100 for tiers 4-8) so each fulfilled
+// order feels rewarding and mission coin-targets clear in a few sales.
 export const SELL_PRICES: Record<number, number> = {
   1: 0,
   2: 0,
-  3: 0,
-  4: 60,
-  5: 70,
-  6: 80,
-  7: 90,
-  8: 100,
+  3: 60,
+  4: 85,
+  5: 105,
+  6: 125,
+  7: 145,
+  8: 165,
 };
 
 // Bonus multipliers per sell request type

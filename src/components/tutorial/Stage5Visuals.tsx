@@ -75,7 +75,7 @@ export function ProvidentLockScreen({ onContinue }: ScreenProps) {
       <div className="inflation-screen-inner">
         <div className="inflation-screen-caption">{t('lock_provident')}</div>
         <div className="provident-lock-stage">
-          <div className="provident-lock-coin" aria-hidden>🪙</div>
+          <div className="provident-lock-coin" aria-hidden>💰</div>
           <div className="provident-lock-icon" aria-hidden>🔒</div>
           <div className="provident-lock-counter">{STAGE5_PROVIDENT_LOCK} ⏳</div>
         </div>
@@ -93,11 +93,11 @@ export function ProvidentBonusScreen({ onContinue }: ScreenProps) {
         <div className="inflation-screen-caption">{t('bonus_provident')}</div>
         <div className="provident-bonus-stage" aria-hidden>
           {/* falling bonus coins (decorative) */}
-          <span className="provident-bonus-coin coin-a">🪙</span>
-          <span className="provident-bonus-coin coin-b">🪙</span>
-          <span className="provident-bonus-coin coin-c">🪙</span>
-          <span className="provident-bonus-coin coin-d">🪙</span>
-          <span className="provident-bonus-coin coin-e">🪙</span>
+          <span className="provident-bonus-coin coin-a">💰</span>
+          <span className="provident-bonus-coin coin-b">💰</span>
+          <span className="provident-bonus-coin coin-c">💰</span>
+          <span className="provident-bonus-coin coin-d">💰</span>
+          <span className="provident-bonus-coin coin-e">💰</span>
           <div className="provident-bonus-base">
             <span className="provident-bonus-jar">🏛️</span>
             <div className="provident-bonus-label">
@@ -214,9 +214,9 @@ export function ThreeInstrumentsGrowth({ onContinue }: ScreenProps) {
         >
           {/* axes */}
           <line x1={padL} y1={padT} x2={padL} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           <line x1={padL} y1={padT + plotH} x2={padL + plotW} y2={padT + plotH}
-                stroke="rgba(255,200,80,0.4)" strokeWidth="1" />
+                stroke="rgba(74,41,0,0.35)" strokeWidth="1" />
           {/* lines */}
           <path d={toPath(depSeries)}  fill="none" stroke="#4ade80" strokeWidth="2.5"
                 strokeLinecap="round" strokeLinejoin="round" className="three-growth-line three-growth-line--a" />

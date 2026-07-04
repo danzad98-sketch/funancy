@@ -67,8 +67,9 @@ export const CHAINS: ChainDef[] = [
 
 export const MAX_LEVEL: ItemLevel = 8;
 
-/** First tier that can be sold for coins. Tiers 1–3 are merge fuel only. */
-export const MIN_SELLABLE_TIER: ItemLevel = 4;
+/** First tier that can be sold for coins. Tiers 1–2 are merge fuel only;
+ *  tier 3 (two merges in) is sellable so early progression is less grindy. */
+export const MIN_SELLABLE_TIER: ItemLevel = 3;
 
 export function isSellableTier(level: ItemLevel): boolean {
   return level >= MIN_SELLABLE_TIER;
