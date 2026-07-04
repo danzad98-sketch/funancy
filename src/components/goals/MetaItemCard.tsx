@@ -260,7 +260,32 @@ function MultiLevelCard({
   onPurchase,
   stageLocked,
 }: Props) {
-  const nextPrice = getNextPrice(item);
+  // Mirror the inflation + sale + pulse pattern used by the regular
+  // MetaItemCard so display, affordability check, and store-side
+  // deduction all reference the SAME price. Previously this component
+  // read raw `getNextPrice(item)` for display + affordability while the
+  // store deducted `inflated × sale-discount` — once any time booster
+  // had fired (factor > 1), every multi-level purchase broke silently.
+  const metaInflationFactor = useGameStore((s) => s.metaInflationFactor);
+  const activeSale = useGameStore((s) => s.activeSale);
+  const stage3Completed = useGameStore((s) => s.stage3Completed);
+  const rawNextPrice = getNextPrice(item);
+  const inflatedPrice =
+    rawNextPrice === null ? null : Math.round(rawNextPrice * metaInflationFactor);
+  const isOnSale = activeSale != null && !stage3Completed;
+  const nextPrice =
+    inflatedPrice === null
+      ? null
+      : isOnSale
+        ? Math.round(inflatedPrice * 0.9)
+        : inflatedPrice;
+
+  // Pulse the price label on every inflation tick.
+  const [pulseKey, setPulseKey] = useState(0);
+  useEffect(() => {
+    setPulseKey((k) => k + 1);
+  }, [metaInflationFactor]);
+
   const actionLabel = getNextActionLabel(item);
   const currentTier = getCurrentTierIndex(item);
   const completed = isItemComplete(item);
@@ -334,9 +359,13 @@ function MultiLevelCard({
 
       {!completed && !isLocked && actionLabel && nextPrice !== null && (
         <div className="mk-meta-action-row mt-3 max-w-xs mx-auto">
-          <div className="mk-meta-price">
+          <div className="mk-meta-price mk-meta-price-pulse" key={pulseKey}>
             <span className="mk-icon mk-icon-coin mk-icon--xs" aria-hidden />
+            {isOnSale && inflatedPrice !== null && inflatedPrice !== nextPrice && (
+              <span className="meta-price-strikethrough">{inflatedPrice.toLocaleString()}</span>
+            )}
             <span className="mk-meta-price-num">{nextPrice.toLocaleString()}</span>
+            {isOnSale && <span className="meta-price-discount">-10%</span>}
           </div>
           <button
             onClick={(e) => {
